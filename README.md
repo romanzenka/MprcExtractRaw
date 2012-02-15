@@ -19,7 +19,7 @@ We use Microsoft Visual Studio 2010. It should not be impossible to do the build
 Usage
 -----
 
-    MprcExtractRaw &lt;option> &lt;parameters>
+    MprcExtractRaw <option> <parameters>
 
 ### Options
 <pre>
