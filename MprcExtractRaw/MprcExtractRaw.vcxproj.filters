@@ -1,0 +1,308 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Readers">
+      <UniqueIdentifier>{1e5c97f2-3e8e-4e11-bbfc-459c770e6b45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Readers\Header Files">
+      <UniqueIdentifier>{3a624988-ce47-403d-9208-cbccecddd7c4}</UniqueIdentifier>
+      <Extensions>*.h</Extensions>
+    </Filter>
+    <Filter Include="Readers\Header Files\RAMP">
+      <UniqueIdentifier>{a6f8d7bf-64f1-4374-b64d-139a5f4f9d7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Readers\Source Files">
+      <UniqueIdentifier>{9636d76e-abd3-45f8-a930-ed5b42e10aa0}</UniqueIdentifier>
+      <Extensions>*.cpp</Extensions>
+    </Filter>
+    <Filter Include="Readers\Source Files\RAMP">
+      <UniqueIdentifier>{39ad850a-4330-4650-8016-e2d96736b64b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Calibrators">
+      <UniqueIdentifier>{07e52e59-3e79-48f0-8df4-c5b475aa0e52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Calibrators\Header Files">
+      <UniqueIdentifier>{b66dbdef-dcc9-4d46-8b7f-aa3fd819a3f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Calibrators\Source Files">
+      <UniqueIdentifier>{4f29f042-692f-4e48-a1db-d74ba3c32004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{2a1e8726-8778-4e52-aea1-022dad87eb07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities\Header Files">
+      <UniqueIdentifier>{b430114c-b0eb-4256-8585-2b3ba2f560b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities\Source Files">
+      <UniqueIdentifier>{a13c6a35-895f-4bc0-8a22-866bfb56e93c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PeakProcessor">
+      <UniqueIdentifier>{373eb64d-c0c6-4f47-9659-b7517792ce52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PeakProcessor\Header Files">
+      <UniqueIdentifier>{e9e4940a-2836-401c-90cd-e7d43c7eb76f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PeakProcessor\Source Files">
+      <UniqueIdentifier>{96c824f9-2fac-495e-b03f-46f3798bac3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SQLite">
+      <UniqueIdentifier>{cdfc69a8-caa8-4db0-82d9-9c5e28d09ea9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="MprcExtractRaw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PolymerDetection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\AgilentRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\AsciiRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\BrukerAsciiRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\BrukerRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\FinniganRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\Ic2LSRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\IMSRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\MicromassRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\MZXmlRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\RawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\ReaderFactory.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\SunExtrelRawData.cpp">
+      <Filter>Readers\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\Ramp\base64.cpp">
+      <Filter>Readers\Source Files\RAMP</Filter>
+    </ClCompile>
+    <ClCompile Include="Readers\Ramp\ramp.cpp">
+      <Filter>Readers\Source Files\RAMP</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibrations\Calibrator.cpp">
+      <Filter>Calibrators\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibrations\CalibratorImp.cpp">
+      <Filter>Calibrators\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Apodization.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\BlockDeque.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\DeconException.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Fft32.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\helpers.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Interpolation.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Matrix.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\savgol.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\SavGolSmoother.cpp">
+      <Filter>Utilities\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PeakProcessor\Peak.cpp">
+      <Filter>PeakProcessor\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PeakProcessor\PeakData.cpp">
+      <Filter>PeakProcessor\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PeakProcessor\PeakFit.cpp">
+      <Filter>PeakProcessor\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PeakProcessor\PeakProcessor.cpp">
+      <Filter>PeakProcessor\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SQLite\sqlite3.c">
+      <Filter>SQLite</Filter>
+    </ClCompile>
+    <ClCompile Include="OutputBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChromatogramMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\egif_lib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\gif_err.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\gif_hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\gifalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OutputBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PolymerDetection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\AgilentRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\AsciiRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\BrukerAsciiRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\BrukerRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\FinniganRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\Icr2lsRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\IMSRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\MicromassRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\MZXmlRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\RawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\ReaderFactory.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\SunExtrelRawData.h">
+      <Filter>Readers\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\Ramp\base64.h">
+      <Filter>Readers\Header Files\RAMP</Filter>
+    </ClInclude>
+    <ClInclude Include="Readers\Ramp\ramp.h">
+      <Filter>Readers\Header Files\RAMP</Filter>
+    </ClInclude>
+    <ClInclude Include="Calibrations\Calibrator.h">
+      <Filter>Calibrators\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Calibrations\CalibratorImp.h">
+      <Filter>Calibrators\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Apodization.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\BlockDeque.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\DeconException.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Fft32.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\helpers.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Interpolation.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Matrix.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\SavGolSmoother.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\Peak.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\PeakData.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\PeakFit.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\PeakIndex.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\PeakProcessor.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PeakProcessor\PeakStatistician.h">
+      <Filter>PeakProcessor\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SQLite\sqlite3.h">
+      <Filter>SQLite</Filter>
+    </ClInclude>
+    <ClInclude Include="SQLite\sqlite3ext.h">
+      <Filter>SQLite</Filter>
+    </ClInclude>
+    <ClInclude Include="ChromatogramMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\gif_lib_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\gif_hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\gif_lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

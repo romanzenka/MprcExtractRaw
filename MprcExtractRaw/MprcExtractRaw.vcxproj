@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{05D94DC2-E01E-4151-AEE2-18E55B545BF8}</ProjectGuid>
+    <RootNamespace>MprcExtractRaw</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>XCALIBUR_INSTALLED;HAVE_STDINT_H;HAVE_BASETSD_H;HAVE_FCNTL_H;__MSDOS__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AllowIsolation>true</AllowIsolation>
+      <Profile>true</Profile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>XCALIBUR_INSTALLED;HAVE_STDINT_H;HAVE_BASETSD_H;HAVE_FCNTL_H;__MSDOS__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Link>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="ChromatogramMap.cpp" />
+    <ClCompile Include="gif\egif_lib.c" />
+    <ClCompile Include="gif\gifalloc.c" />
+    <ClCompile Include="gif\gif_err.c" />
+    <ClCompile Include="gif\gif_hash.c" />
+    <ClCompile Include="MprcExtractRaw.cpp" />
+    <ClCompile Include="OutputBuffer.cpp" />
+    <ClCompile Include="PolymerDetection.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="Readers\AgilentRawData.cpp" />
+    <ClCompile Include="Readers\AsciiRawData.cpp" />
+    <ClCompile Include="Readers\BrukerAsciiRawData.cpp" />
+    <ClCompile Include="Readers\BrukerRawData.cpp" />
+    <ClCompile Include="Readers\FinniganRawData.cpp" />
+    <ClCompile Include="Readers\Ic2LSRawData.cpp" />
+    <ClCompile Include="Readers\IMSRawData.cpp" />
+    <ClCompile Include="Readers\MicromassRawData.cpp" />
+    <ClCompile Include="Readers\MZXmlRawData.cpp" />
+    <ClCompile Include="Readers\RawData.cpp" />
+    <ClCompile Include="Readers\ReaderFactory.cpp" />
+    <ClCompile Include="Readers\SunExtrelRawData.cpp" />
+    <ClCompile Include="Readers\Ramp\base64.cpp" />
+    <ClCompile Include="Readers\Ramp\ramp.cpp" />
+    <ClCompile Include="Calibrations\Calibrator.cpp" />
+    <ClCompile Include="Calibrations\CalibratorImp.cpp" />
+    <ClCompile Include="Utilities\Apodization.cpp" />
+    <ClCompile Include="Utilities\BlockDeque.cpp" />
+    <ClCompile Include="Utilities\DeconException.cpp" />
+    <ClCompile Include="Utilities\Fft32.cpp" />
+    <ClCompile Include="Utilities\helpers.cpp" />
+    <ClCompile Include="Utilities\Interpolation.cpp" />
+    <ClCompile Include="Utilities\Matrix.cpp" />
+    <ClCompile Include="Utilities\savgol.cpp" />
+    <ClCompile Include="Utilities\SavGolSmoother.cpp" />
+    <ClCompile Include="PeakProcessor\Peak.cpp" />
+    <ClCompile Include="PeakProcessor\PeakData.cpp" />
+    <ClCompile Include="PeakProcessor\PeakFit.cpp" />
+    <ClCompile Include="PeakProcessor\PeakProcessor.cpp" />
+    <ClCompile Include="SQLite\sqlite3.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChromatogramMap.h" />
+    <ClInclude Include="gif\gif_hash.h" />
+    <ClInclude Include="gif\gif_lib.h" />
+    <ClInclude Include="gif\gif_lib_private.h" />
+    <ClInclude Include="OutputBuffer.h" />
+    <ClInclude Include="PolymerDetection.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Test.h" />
+    <ClInclude Include="Readers\AgilentRawData.h" />
+    <ClInclude Include="Readers\AsciiRawData.h" />
+    <ClInclude Include="Readers\BrukerAsciiRawData.h" />
+    <ClInclude Include="Readers\BrukerRawData.h" />
+    <ClInclude Include="Readers\FinniganRawData.h" />
+    <ClInclude Include="Readers\Icr2lsRawData.h" />
+    <ClInclude Include="Readers\IMSRawData.h" />
+    <ClInclude Include="Readers\MicromassRawData.h" />
+    <ClInclude Include="Readers\MZXmlRawData.h" />
+    <ClInclude Include="Readers\RawData.h" />
+    <ClInclude Include="Readers\ReaderFactory.h" />
+    <ClInclude Include="Readers\SunExtrelRawData.h" />
+    <ClInclude Include="Readers\Ramp\base64.h" />
+    <ClInclude Include="Readers\Ramp\ramp.h" />
+    <ClInclude Include="Calibrations\Calibrator.h" />
+    <ClInclude Include="Calibrations\CalibratorImp.h" />
+    <ClInclude Include="Utilities\Apodization.h" />
+    <ClInclude Include="Utilities\BlockDeque.h" />
+    <ClInclude Include="Utilities\DeconException.h" />
+    <ClInclude Include="Utilities\Fft32.h" />
+    <ClInclude Include="Utilities\helpers.h" />
+    <ClInclude Include="Utilities\Interpolation.h" />
+    <ClInclude Include="Utilities\Matrix.h" />
+    <ClInclude Include="Utilities\SavGolSmoother.h" />
+    <ClInclude Include="PeakProcessor\Peak.h" />
+    <ClInclude Include="PeakProcessor\PeakData.h" />
+    <ClInclude Include="PeakProcessor\PeakFit.h" />
+    <ClInclude Include="PeakProcessor\PeakIndex.h" />
+    <ClInclude Include="PeakProcessor\PeakProcessor.h" />
+    <ClInclude Include="PeakProcessor\PeakStatistician.h" />
+    <ClInclude Include="SQLite\sqlite3.h" />
+    <ClInclude Include="SQLite\sqlite3ext.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
