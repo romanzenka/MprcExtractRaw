@@ -22,6 +22,7 @@ Usage
     MprcExtractRaw <option> <parameters>
 
 ### Options
+<pre>
   --mprc        extract .mprc file
 
   --data        extract .tsv files for Swift QA
@@ -29,15 +30,19 @@ Usage
   --mzrange     extract .tsv files with peak data from given range
 
   --params      obtain parameters from specified file
+</pre>
 
 #### --mprc parameters
+<pre>
   --raw <thermo finnigan RAW file path>
 
   --out <output database (must not exist)>
 
   --ms2  optional: enables extraction of peaks from ms2 spectra
+</pre>
 
 #### --data parameters
+<pre>
   --raw <thermo finnigan RAW file path>
 
   --info <info output file>
@@ -49,9 +54,11 @@ Usage
 
   --chromatogram <chromatogram gif file>
         Chromatogram as a gif image.
+</pre>
 
 ##### Spectra file columns
 
+<pre>
 * Scan Id               Scan number
 * Parent m/z            The m/z that was isolated to obtain MSn
 * TIC                   Total Ion Current
@@ -72,14 +79,18 @@ Usage
 * Polymer Offset        The initial polymer mass (end of the polymer before segments start)
 * Polymer Score Polymer score
 * Polymer p-value       Probability that a higher or equal polymer score could be achieved randomly
+</pre>
 
 #### --mzrange parameters
+<pre>
   --raw <thermo finnigan RAW file path>
   --peaks <peaks data output file>
   --min <minimum M/Z>
   --max <maximum M/Z>
+</pre>
 
 #### --params <param file>
+<pre>
         The params input file must contain all the command line
         parameters, one per line, including flags.
         Example:
@@ -90,3 +101,4 @@ Usage
                 <info output file>
                 --spectra
                 <spectra output file>
+</pre>
