@@ -19,7 +19,7 @@ We use Microsoft Visual Studio 2010. It should not be impossible to do the build
 Usage
 -----
 
-    MprcExtractRaw <option> <parameters>
+    MprcExtractRaw &lt;option> &lt;parameters>
 
 ### Options
 <pre>
@@ -34,25 +34,25 @@ Usage
 
 #### --mprc parameters
 <pre>
-  --raw <thermo finnigan RAW file path>
+  --raw &lt;thermo finnigan RAW file path>
 
-  --out <output database (must not exist)>
+  --out &lt;output database (must not exist)>
 
   --ms2  optional: enables extraction of peaks from ms2 spectra
 </pre>
 
 #### --data parameters
 <pre>
-  --raw <thermo finnigan RAW file path>
+  --raw &lt;thermo finnigan RAW file path>
 
-  --info <info output file>
+  --info &lt;info output file>
         Raw file specific information, such as instrument id,
         original raw file name, adquisition start time, and so on.
 
-  --spectra <spectra output file>
+  --spectra &lt;spectra output file>
         Spectra information. Every row in the file represents a spectrum.
 
-  --chromatogram <chromatogram gif file>
+  --chromatogram &lt;chromatogram gif file>
         Chromatogram as a gif image.
 </pre>
 
@@ -83,22 +83,22 @@ Usage
 
 #### --mzrange parameters
 <pre>
-  --raw <thermo finnigan RAW file path>
-  --peaks <peaks data output file>
-  --min <minimum M/Z>
-  --max <maximum M/Z>
+  --raw &lt;thermo finnigan RAW file path>
+  --peaks &lt;peaks data output file>
+  --min &lt;minimum M/Z>
+  --max &lt;maximum M/Z>
 </pre>
 
-#### --params <param file>
+#### --params &lt;param file>
 <pre>
         The params input file must contain all the command line
         parameters, one per line, including flags.
         Example:
                 --data
                 --raw
-                <RAW file path>
+                &lt;RAW file path>
                 --info
-                <info output file>
+                &lt;info output file>
                 --spectra
-                <spectra output file>
+                &lt;spectra output file>
 </pre>
