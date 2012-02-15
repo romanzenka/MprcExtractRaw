@@ -19,30 +19,39 @@ We use Microsoft Visual Studio 2010. It should not be impossible to do the build
 Usage
 -----
 
-Usage: MprcExtractRaw <option> <parameters>
+    MprcExtractRaw <option> <parameters>
 
-Options:
+### Options
   --mprc        extract .mprc file
+
   --data        extract .tsv files for Swift QA
+
   --mzrange     extract .tsv files with peak data from given range
+
   --params      obtain parameters from specified file
 
---mprc parameters:
+#### --mprc parameters
   --raw <thermo finnigan RAW file path>
+
   --out <output database (must not exist)>
+
   --ms2  optional: enables extraction of peaks from ms2 spectra
 
---data parameters:
+#### --data parameters
   --raw <thermo finnigan RAW file path>
+
   --info <info output file>
         Raw file specific information, such as instrument id,
         original raw file name, adquisition start time, and so on.
+
   --spectra <spectra output file>
         Spectra information. Every row in the file represents a spectrum.
+
   --chromatogram <chromatogram gif file>
         Chromatogram as a gif image.
 
-Spectra file columns:
+##### Spectra file columns
+
 * Scan Id               Scan number
 * Parent m/z            The m/z that was isolated to obtain MSn
 * TIC                   Total Ion Current
@@ -60,19 +69,17 @@ Spectra file columns:
 * Dissociation Type     cid/etd
 * Polymer Segment Size  Size of polymer segment (e.g. 44 Da for typical polymer)
 
-* Polymer Offset        The initial polymer mass (end of the polymer before segm
-ents start)
+* Polymer Offset        The initial polymer mass (end of the polymer before segments start)
 * Polymer Score Polymer score
-* Polymer p-value       Probability that a higher or equal polymer score could b
-e achieved randomly
+* Polymer p-value       Probability that a higher or equal polymer score could be achieved randomly
 
---mzrange parameters:
+#### --mzrange parameters
   --raw <thermo finnigan RAW file path>
   --peaks <peaks data output file>
   --min <minimum M/Z>
   --max <maximum M/Z>
 
---params <param file>
+#### --params <param file>
         The params input file must contain all the command line
         parameters, one per line, including flags.
         Example:
