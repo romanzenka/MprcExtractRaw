@@ -37,6 +37,10 @@ const std::string ms2Switch = "--ms2";
 const std::string infoFile = "--info";
 const std::string spectraFile = "--spectra";
 const std::string chromatogramFile = "--chromatogram";
+const std::string tuneMethodFile = "--tune";
+const std::string instrumentMethodFile = "--instrument";
+const std::string sampleInformationFile = "--sample";
+const std::string errorLogFile = "--errorlog";
 
 // MZ range params (rawFile is shared with MPRC params)
 const std::string minMz = "--min";
@@ -869,6 +873,15 @@ void printUsage() {
 	std::cerr << "\tSpectra information. Every row in the file represents a spectrum." << std::endl;
 	std::cerr << "  " << chromatogramFile << " <chromatogram gif file>" << std::endl;
 	std::cerr << "\tChromatogram as a gif image." << std::endl;
+	std::cerr << "  " << tuneMethodFile << " <tune method file>" << std::endl;
+	std::cerr << "\tTune method (copied verbatim as seen in XCalibur)" << std::endl;
+	std::cerr << "  " << instrumentMethodFile << " <instrument method file>" << std::endl;
+	std::cerr << "\Instrument method (copied verbatim as seen in XCalibur)" << std::endl;
+	std::cerr << "  " << sampleInformationFile << " <sample information file>" << std::endl;
+	std::cerr << "\Sample information (copied verbatim as seen in XCalibur)" << std::endl;
+	std::cerr << "  " << errorLogFile << " <error log file>" << std::endl;
+	std::cerr << "\Error log. If there was no error, this file should be empty." << std::endl;
+
 	std::cerr << std::endl;
 	std::cerr << "Spectra file columns:" << std::endl;
 	std::cerr << "* " << ScanId << "\t\tScan number" << std::endl;
