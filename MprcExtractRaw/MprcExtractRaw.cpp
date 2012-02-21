@@ -99,6 +99,9 @@ const std::string sampleId = "Sample Id";
 const std::string lastModified = "Last Modified";
 const std::string numberOfMs1Spectra = "MS1 Spectra";
 const std::string numberOfMs2Spectra = "MS2 Spectra";
+const std::string numberOfMs3PlusSpectra = "MS3+ Spectra";
+const std::string acquisitionStartTime = "Start Time";
+const std::string runTimeInSeconds = "Run Time (Seconds)";
 
 
 // Column names for the peaks data file
