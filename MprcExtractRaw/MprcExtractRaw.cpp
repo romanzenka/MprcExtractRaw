@@ -96,6 +96,10 @@ const std::string originalRawFileName = "Name";
 const std::string creationDate = "Creation Date";
 const std::string instrumentSerial = "Instrument Serial";
 const std::string sampleId = "Sample Id";
+const std::string lastModified = "Last Modified";
+const std::string numberOfMs1Spectra = "MS1 Spectra";
+const std::string numberOfMs2Spectra = "MS2 Spectra";
+
 
 // Column names for the peaks data file
 // ScanId from spectra
