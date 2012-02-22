@@ -13,6 +13,7 @@
 #include <float.h>
 #include <time.h>
 #include <limits>
+#include <ATLComTime.h>
 #include "..\Utilities\Interpolation.h"
 
 #ifdef XCALIBUR_INSTALLED
@@ -945,7 +946,17 @@ namespace Engine
 			// --
 		}
 
-		void FinniganRawData::GetRawFileInfo(std::string *originalFileName, std::string *creationDate, std::string * instrumentSerial, std::string *sampleId)
+		void FinniganRawData::GetRawFileInfo(			
+			std::string *originalFileName, 
+			std::string *instrumentName, 
+			std::string *instrumentSerial, 
+			std::string *creationDate, 
+			double *runTimeInSeconds,
+			std::string *comment,			
+			std::string *sampleId,
+			long *numMs1,
+			long *numMs2,
+			long *numMs3Plus)
 		{
 			using namespace std;
 
@@ -955,7 +966,14 @@ namespace Engine
 			
 			DATE dt = NULL;
 			m_xraw2_class->GetCreationDate(&dt);
+			COleDateTime date(dt);
 			//Convert DATE to a formatted string
+			*creationDate = (LPCTSTR)date.Format("%Y-%m-%d %H:%M:%S");
+
+			double endTimeInMinutes = 0.0;
+			m_xraw2_class->GetEndTime(&endTimeInMinutes);
+
+			*runTimeInSeconds = endTimeInMinutes*60.0;
 
 			strBSTR = NULL;
 			m_xraw2_class->GetSeqRowSampleID(&strBSTR);
@@ -964,6 +982,46 @@ namespace Engine
 			strBSTR = NULL;
 			m_xraw2_class->GetInstSerialNumber(&strBSTR);
 			*instrumentSerial = _bstr_t(strBSTR);
+
+			strBSTR = NULL;
+			m_xraw2_class->GetInstName(&strBSTR);
+			*instrumentName = _bstr_t(strBSTR);
+
+			strBSTR = NULL;
+			m_xraw2_class->GetSeqRowComment(&strBSTR);
+			*comment = _bstr_t(strBSTR);
+
+			CountSpectraByMsLevel(numMs1, numMs2, numMs3Plus);
+		}
+
+		void FinniganRawData::GetTuneMethod(std::string *tuneMethod) {
+		}
+
+		void GetInstrumentMethod(std::string *instrumentMethod) {
+		}
+
+		void GetSampleInformation(std::string *sampleInformation) {
+		}
+
+		void GetErrorLog(std::string *errorLog) {
+		}
+
+		void FinniganRawData::CountSpectraByMsLevel(long *ms1, long *ms2, long *ms3plus) {
+			int first=GetFirstScanNum();
+			int last=GetLastScanNum();
+			for(int i=first; i<=last; i++) {
+				switch(GetMSLevel(i)) {
+				case 1:
+					(*ms1)++;
+					break;
+				case 2:
+					(*ms2)++;
+					break;
+				default:
+					(*ms3plus)++;
+					break;
+				}
+			}
 		}
 
 		int FinniganRawData::GetXRawFileInstance(void)

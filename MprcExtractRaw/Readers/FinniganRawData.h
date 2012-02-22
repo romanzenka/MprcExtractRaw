@@ -135,7 +135,7 @@ namespace Engine {
 				double *ionInjectionTimeMs, double *elapsedTimeSeconds, 
 				bool *lockMassFound, double *lockMassShift, 
 				double *conI, double *conA, double *conB, double *conC, double *conD, double *conE);
-			void FinniganRawData::GetStatusLogData(long scan_num,
+			void GetStatusLogData(long scan_num,
 				double *sourceCurrent,
 				double *vacuumIonGauge,
 				double *vacuumConvectronGauge,
@@ -145,7 +145,24 @@ namespace Engine {
 				double *ionMultiplier2,
 				double *ftCeMeasureVoltage,
 				double *ftAnalyzerTemp);
-			void GetRawFileInfo(std::string *originalFileName, std::string *creationDate, std::string *instrumentSerial, std::string *sampleId);
+			
+			void GetRawFileInfo(			
+				std::string *originalFileName, 
+				std::string *instrumentName, 
+				std::string *instrumentSerial, 
+				std::string *creationDate, 
+				double *runTimeInSeconds,
+				std::string *comment,			
+				std::string *sampleId,
+				long *numMs1,
+				long *numMs2,
+				long *numMs3Plus);
+
+			void GetTuneMethod(std::string *tuneMethod);
+			void GetInstrumentMethod(std::string *instrumentMethod);
+			void GetSampleInformation(std::string *sampleInformation);
+			void GetErrorLog(std::string *errorLog);
+
 			int GetParentScan(int scan_num);
 			bool IsMSScan(int scan_num);					
 			double GetParentMz(int scan_num);
@@ -158,6 +175,8 @@ namespace Engine {
 			bool IsFTScan(int scanNum) ; 
 			double GetAGCAccumulationTime(int scan_num) ; 
 			double GetTICForScan(int scan_num) ; 
+
+			void CountSpectraByMsLevel(long *ms1, long *ms2, long *ms3plus);
 
 	};
 }

@@ -16,7 +16,7 @@
 #include "ChromatogramMap.h"
 
 // Version of MprcExtractRaw
-#define VERSION "0.2"
+#define VERSION "0.3"
 
 // Version of the ms_scans table
 #define SPECTRA_VERSION "0.1"
@@ -94,22 +94,21 @@ const std::string FtAnalyzerTemp = "FT Analyzer Temp (C)";
 // Parameter names for raw info data file
 const std::string originalRawFileName = "Name";
 const std::string creationDate = "Creation Date";
-const std::string instrumentSerial = "Instrument Serial";
 const std::string sampleId = "Sample Id";
-const std::string lastModified = "Last Modified";
 const std::string numberOfMs1Spectra = "MS1 Spectra";
 const std::string numberOfMs2Spectra = "MS2 Spectra";
 const std::string numberOfMs3PlusSpectra = "MS3+ Spectra";
-const std::string acquisitionStartTime = "Start Time";
-const std::string runTimeInSeconds = "Run Time (Seconds)";
-
+const std::string instrumentName = "Instrument Name";
+const std::string instrumentSerial = "Instrument Serial";
+const std::string runTimeInSeconds = "Run Time (seconds)";
+const std::string comment = "Comment";
 
 // Column names for the peaks data file
 // ScanId from spectra
 // RetentionTime from spectra
 const std::string Mz = "Mz";
 const std::string Intensity = "Intensity";
-
+	
 // Check Sqlite Error
 void cse(int rc) {
 	if( rc!=SQLITE_OK ){
@@ -351,14 +350,15 @@ void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, s
 		PolymerDetection::FindPolymers(mz, charge, mzs, intensities, *offset, *segment, *score, *pValue);
 }
 
-int extractRawDataFile(const char * inputRawFileName, const char * infoFileName, const char * spectraFileName, const char * chromatogramMapFileName) {
+int extractRawDataFile(const char * inputRawFileName, const char * infoFileName, const char * spectraFileName, const char * chromatogramMapFileName,
+	const char *tuneMethodFileName, const char *instrumentMethodFile, const char *sampleInformationFile, const char *errorLogFile) {
 	using namespace std;
 
 	clock_t startClock = clock();
 
 	Engine::Readers::FinniganRawData * fRawData = NULL;
 
-	cout << "Reading raw file." << endl;
+	cout << "Reading raw file: " << inputRawFileName << endl;
 
 	std::vector<double> mzs;
 	std::vector<double> intensities;
@@ -378,17 +378,29 @@ int extractRawDataFile(const char * inputRawFileName, const char * infoFileName,
 			infoOutputStream.exceptions(std::ofstream::failbit);
 			infoOutputStream.open(infoFileName);
 
-			string rawFileName;
-			string creatDate;
-			string instSerial;
-			string sampId;
+			std::string rawFileName;
+			std::string creatDate;
+			std::string instName;
+			std::string instSerial;
+			std::string comment;
+			std::string sampleId;			
+			long numberOfMs1Spectra = 0;
+			long numberOfMs2Spectra = 0;
+			long numberOfMs3PlusSpectra = 0;
+			double runTime = 0.0;
 
-			fRawData->GetRawFileInfo(&rawFileName, &creatDate, &instSerial, &sampId);
+			fRawData->GetRawFileInfo(&rawFileName, &instName, &instSerial, &creatDate, &runTime, &comment, &sampleId, &numberOfMs1Spectra, &numberOfMs2Spectra, &numberOfMs3PlusSpectra);
 
-			infoOutputStream << originalRawFileName << '\t' << rawFileName << endl;
-			infoOutputStream << creationDate << '\t' << creatDate << endl;
-			infoOutputStream << instrumentSerial << '\t' << instSerial << endl;
-			infoOutputStream << sampleId << '\t' << sampId << endl;
+			infoOutputStream << ::originalRawFileName << '\t' << rawFileName << endl;
+			infoOutputStream << ::numberOfMs1Spectra << '\t' << numberOfMs1Spectra << endl;
+			infoOutputStream << ::numberOfMs2Spectra << '\t' << numberOfMs2Spectra << endl;
+			infoOutputStream << ::numberOfMs3PlusSpectra << '\t' << numberOfMs3PlusSpectra << endl;
+			infoOutputStream << ::instrumentName << '\t' << instName << endl;
+			infoOutputStream << ::instrumentSerial << '\t' << instSerial << endl;
+			infoOutputStream << ::creationDate << '\t' << creatDate << endl;
+			infoOutputStream << ::runTimeInSeconds << '\t' << runTime << endl;
+			infoOutputStream << ::comment << '\t' << comment << endl;
+			infoOutputStream << ::sampleId << '\t' << sampleId << endl;
 
 			infoOutputStream.close();
 		}
@@ -753,8 +765,6 @@ std::string getOption(std::vector<std::string> & commandLineParams, std::string 
 
 	using namespace std;
 
-	cout << "Getting value for option " << option;
-
 	vector<string>::iterator commandLineParamsItr = commandLineParams.begin();
 	string value;
 
@@ -764,15 +774,12 @@ std::string getOption(std::vector<std::string> & commandLineParams, std::string 
 			commandLineParamsItr++;
 
 			if (commandLineParamsItr != commandLineParams.end()) {
-				cout << ": " << *commandLineParamsItr << endl;
 				return *commandLineParamsItr;
 			}
 		}
 
 		commandLineParamsItr++;
 	}
-
-	cout << ": " << endl;
 
 	return "";
 }
@@ -781,22 +788,18 @@ bool hasOption(std::vector<std::string> & commandLineParams, std::string option)
 
 	using namespace std;
 
-	cout << "Option " << option;
-
 	vector<string>::iterator commandLineParamsItr = commandLineParams.begin();
 	string value;
 
 	while(commandLineParamsItr != commandLineParams.end()) {
 		value = *commandLineParamsItr;
 		if (value == option) {
-			cout << " has been provided." << endl;
 			return true;
 		}
 
 		commandLineParamsItr++;
 	}
 
-	cout << " has not been provided." << endl;
 	return false;
 }
 
@@ -846,7 +849,6 @@ std::vector<std::string> getParamsFromFile(const char* inputParamsFile) {
 	string line;
 
 	while (!getline(inputStream, line).eof()) {
-		cout << "Line from param file: " << line << std::endl;
 		paramVector.push_back(trim(line));
 	}
 
@@ -883,11 +885,11 @@ void printUsage() {
 	std::cerr << "  " << tuneMethodFile << " <tune method file>" << std::endl;
 	std::cerr << "\tTune method (copied verbatim as seen in XCalibur)" << std::endl;
 	std::cerr << "  " << instrumentMethodFile << " <instrument method file>" << std::endl;
-	std::cerr << "\Instrument method (copied verbatim as seen in XCalibur)" << std::endl;
+	std::cerr << "\tInstrument method (copied verbatim as seen in XCalibur)" << std::endl;
 	std::cerr << "  " << sampleInformationFile << " <sample information file>" << std::endl;
-	std::cerr << "\Sample information (copied verbatim as seen in XCalibur)" << std::endl;
+	std::cerr << "\tSample information (copied verbatim as seen in XCalibur)" << std::endl;
 	std::cerr << "  " << errorLogFile << " <error log file>" << std::endl;
-	std::cerr << "\Error log. If there was no error, this file should be empty." << std::endl;
+	std::cerr << "\tError log. If there was no error, this file should be empty." << std::endl;
 
 	std::cerr << std::endl;
 	std::cerr << "Spectra file columns:" << std::endl;
@@ -986,10 +988,13 @@ int main(int argc, char* argv[])
 		}
 
 		std::string infoFileName = getOption(paramVector, infoFile);
-
 		std::string spectraFileName = getOption(paramVector, spectraFile);
-
 		std::string chromatogramMap = getOption(paramVector, chromatogramFile);
+		std::string tuneMethodFileName = getOption(paramVector, tuneMethodFile);
+		std::string instrumentMethodFileName = getOption(paramVector, instrumentMethodFile);
+		std::string sampleInfoFileName = getOption(paramVector, sampleInformationFile);
+		std::string errorLogFileName = getOption(paramVector, errorLogFile);
+
 		const char *chromatogramMapFileName = NULL;
 		if(!chromatogramMap.empty()) {
 			chromatogramMapFileName = chromatogramMap.c_str();
