@@ -709,6 +709,53 @@ namespace Engine
 				ftAnalyzerTemp);
 		}
 
+		struct KeyValuePair {
+			std::string key;
+			std::string value;
+		};
+
+		// Parse key-value pairs out of COM variants
+		// The keys and values variant data is deallocated at the end of this function
+		KeyValuePair* getKeyValuePairs(VARIANT *keys, VARIANT *values, long count) {
+			SAFEARRAY FAR* psaLabels = keys->parray;
+			keys->parray = NULL;
+			SAFEARRAY FAR* psaValues = values->parray;
+			values->parray = NULL;
+			BSTR* pbstrLabels = NULL;
+			BSTR* pbstrValues = NULL;
+			if( FAILED(SafeArrayAccessData( psaLabels, (void**)(&pbstrLabels) ) ) )
+			{
+				SafeArrayUnaccessData( psaLabels );
+				SafeArrayDestroy( psaLabels );
+				throw "Failed to access labels array";
+			}
+			if( FAILED(SafeArrayAccessData( psaValues, (void**)(&pbstrValues) ) ) )
+			{
+				SafeArrayUnaccessData( psaLabels );
+				SafeArrayDestroy( psaLabels );
+				SafeArrayUnaccessData( psaValues );
+				SafeArrayDestroy( psaValues );
+				throw "Failed to access values array";
+			}
+
+			KeyValuePair *result = new KeyValuePair[count];
+			
+			for( long i=0; i<count; i++ )
+			{
+				result[i].key = _bstr_t(pbstrLabels[i]);
+				result[i].value = _bstr_t(pbstrValues[i]);									
+			}
+
+			// Delete the SafeArray
+			SafeArrayUnaccessData( psaLabels );
+			SafeArrayDestroy( psaLabels );
+			SafeArrayUnaccessData( psaValues );
+			SafeArrayDestroy( psaValues );
+
+			return result;
+		}
+
+
 		void FinniganRawData::GetScanHeaderData(long scan_num, double *ionInjectionTimeMs, double *elapsedTimeSeconds, bool *lockMassFound, double *lockMassShift, double *conI, double *conA, double *conB, double *conC, double *conD, double *conE) {
 			// Try to obtain additional values from the trailer data
 			*ionInjectionTimeMs = 0;
@@ -726,31 +773,12 @@ namespace Engine
 				&varValues,
 				&nArraySize);
 
-			// Get a pointer to the SafeArray
-			SAFEARRAY FAR* psaLabels = varLabels.parray;
-			varLabels.parray = NULL;
-			SAFEARRAY FAR* psaValues = varValues.parray;
-			varValues.parray = NULL;
-			BSTR* pbstrLabels = NULL;
-			BSTR* pbstrValues = NULL;
-			if( FAILED(SafeArrayAccessData( psaLabels, (void**)(&pbstrLabels) ) ) )
-			{
-				SafeArrayUnaccessData( psaLabels );
-				SafeArrayDestroy( psaLabels );
-				throw "Failed to access labels array for scan trailer info";
-			}
-			if( FAILED(SafeArrayAccessData( psaValues, (void**)(&pbstrValues) ) ) )
-			{
-				SafeArrayUnaccessData( psaLabels );
-				SafeArrayDestroy( psaLabels );
-				SafeArrayUnaccessData( psaValues );
-				SafeArrayDestroy( psaValues );
-				throw "Failed to access values array for scan trailer info";
-			}
+			KeyValuePair *data = getKeyValuePairs(&varLabels, &varValues, nArraySize);
+
 			for( long i=0; i<nArraySize; i++ )
 			{
-				std::string sLabel = _bstr_t(pbstrLabels[i]);
-				std::string sData = _bstr_t(pbstrValues[i]);
+				std::string sLabel = data[i].key;
+				std::string sData = data[i].value;
 								
 				if(sLabel=="Ion Injection Time (ms):") {
 					*ionInjectionTimeMs = atof(sData.c_str());
@@ -793,11 +821,8 @@ namespace Engine
 					}
 				}
 			}
-			// Delete the SafeArray
-			SafeArrayUnaccessData( psaLabels );
-			SafeArrayDestroy( psaLabels );
-			SafeArrayUnaccessData( psaValues );
-			SafeArrayDestroy( psaValues );			
+
+			delete [] data;
 		}
 
 		void FinniganRawData::GetStatusLogData(long scan_num, 
@@ -837,34 +862,13 @@ namespace Engine
 				&varValues,
 				&nArraySize);
 
-			// -- Boilerplate: Get a pointer to the SafeArray
-			SAFEARRAY FAR* psaLabels = varLabels.parray;
-			varLabels.parray = NULL;
-			SAFEARRAY FAR* psaValues = varValues.parray;
-			varValues.parray = NULL;
-			BSTR* pbstrLabels = NULL;
-			BSTR* pbstrValues = NULL;
-			if( FAILED(SafeArrayAccessData( psaLabels, (void**)(&pbstrLabels) ) ) )
-			{
-				SafeArrayUnaccessData( psaLabels );
-				SafeArrayDestroy( psaLabels );
-				throw "Failed to access labels array for scan trailer info";
-			}
-			if( FAILED(SafeArrayAccessData( psaValues, (void**)(&pbstrValues) ) ) )
-			{
-				SafeArrayUnaccessData( psaLabels );
-				SafeArrayDestroy( psaLabels );
-				SafeArrayUnaccessData( psaValues );
-				SafeArrayDestroy( psaValues );
-				throw "Failed to access values array for scan trailer info";
-			}
-			// --
+			KeyValuePair *data = getKeyValuePairs(&varLabels, &varValues, nArraySize);
 
 			int section = 0;
 			for( long i=0; i<nArraySize; i++ )
 			{
-				std::string sLabel = _bstr_t(pbstrLabels[i]);
-				std::string sData = _bstr_t(pbstrValues[i]);								
+				std::string sLabel = data[i].key;
+				std::string sData = data[i].value;
 
 				if(sLabel=="API SOURCE") {
 					section = 1;
@@ -937,13 +941,8 @@ namespace Engine
 			}
 				
 			}
-			
-			// -- Boilerplate Delete the SafeArray
-			SafeArrayUnaccessData( psaLabels );
-			SafeArrayDestroy( psaLabels );
-			SafeArrayUnaccessData( psaValues );
-			SafeArrayDestroy( psaValues );			
-			// --
+
+			delete [] data;
 		}
 
 		void FinniganRawData::GetRawFileInfo(			
@@ -994,16 +993,191 @@ namespace Engine
 			CountSpectraByMsLevel(numMs1, numMs2, numMs3Plus);
 		}
 
-		void FinniganRawData::GetTuneMethod(std::string *tuneMethod) {
+		void FinniganRawData::GetTuneMethod(std::string *data) {
+			long numData = 0;
+			m_xraw2_class->GetNumTuneData(&numData);
+
+			char numBuf[10]="";
+
+			for(long dataNumber=0; dataNumber<numData; dataNumber++) {
+				VARIANT labels;
+				VariantInit(&labels);
+				VARIANT values;
+				VariantInit(&values);
+
+				long arraySize = 0;
+				if(m_xraw2_class->GetTuneData(dataNumber, &labels, &values, &arraySize)!=0) {
+					break;
+				}
+
+				data->append("Tune Method Number\t");
+				data->append(_itoa(dataNumber+1, numBuf, 10));
+				data->append("\n");
+
+				KeyValuePair *pairs = getKeyValuePairs(&labels, &values, arraySize);
+
+				for(int i=0; i<arraySize; i++) {
+					data->append(pairs[i].key);
+					data->append("\t");
+					data->append(pairs[i].value);
+					data->append("\n");
+				}
+
+				delete [] pairs;
+			}
 		}
 
-		void GetInstrumentMethod(std::string *instrumentMethod) {
+		// A very idiotic string replace function as we are lazy to use Boost
+		void replace(std::string& str, const std::string& oldStr, const std::string &newStr) {
+			size_t pos = 0;
+			while((pos = str.find(oldStr, pos)) != std::string::npos) {
+				str.replace(pos, oldStr.length(), newStr);
+				pos += newStr.length();
+			}
 		}
 
-		void GetSampleInformation(std::string *sampleInformation) {
+		void FinniganRawData::GetInstrumentMethod(std::string *data) {
+			long numData = 0;
+			m_xraw2_class->GetNumInstMethods(&numData);
+
+			char numBuf[10]="";
+
+			for(long dataNumber=0; dataNumber<numData; dataNumber++) {
+				BSTR method=NULL;
+				if(m_xraw2_class->GetInstMethod(dataNumber, &method)!=0) {
+					break;
+				}
+				std::string text = _bstr_t(method);
+				replace(text, "\r", "");
+				data->append(text);
+				data->append("\n");
+			}
 		}
 
-		void GetErrorLog(std::string *errorLog) {
+		const char* SAMPLE_TYPES[] = { "Unknown", "Blank", "QC", "Standard Clear (None)", "Standard Update (None)", "Standard Bracket (None)", "Standard Bracket Start (multiple brackets)", "Standard Bracket End (multiple brackets)" };
+
+		void FinniganRawData::GetSampleInformation(std::string *data) {
+			BSTR str = NULL;
+			double d = 0.0;
+			long l = 0;
+			char strBuf[20]="";
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowCalibrationFile(&str);
+			data->append("Calibration File:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowComment(&str);
+			data->append("Comment:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowDataPath(&str);
+			data->append("Data Path:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			d = 0.0;
+			m_xraw2_class->GetSeqRowDilutionFactor(&d);
+			sprintf(strBuf, "%g", d);
+			data->append("Dilution Factor:\t"); data->append(strBuf); data->append("\n");
+
+			d = 0.0;
+			m_xraw2_class->GetSeqRowInjectionVolume(&d);
+			sprintf(strBuf, "%g", d);
+			data->append("Injection Volume:\t"); data->append(strBuf); data->append("\n");
+			
+			str = NULL;
+			m_xraw2_class->GetSeqRowInstrumentMethod(&str);
+			data->append("Instrument Method:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			d = 0.0;
+			m_xraw2_class->GetSeqRowISTDAmount(&d);
+			sprintf(strBuf, "%g", d);
+			data->append("ISTD Amount:\t"); data->append(strBuf); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowLevelName(&str);
+			data->append("Level Name:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			l = 0;
+			m_xraw2_class->GetSeqRowNumber(&l);
+			sprintf(strBuf, "%d", l);
+			data->append("Row:\t"); data->append(strBuf); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowProcessingMethod(&str);
+			data->append("Processing Method:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowRawFileName(&str);
+			data->append("Raw File Name:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowSampleID(&str);
+			data->append("Sample ID:\t"); data->append(_bstr_t(str)); data->append("\n");
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowSampleName(&str);
+			data->append("Sample Name:\t"); data->append(_bstr_t(str)); data->append("\n");
+			
+			l = 0;
+			m_xraw2_class->GetSeqRowSampleType(&l);
+			if(l>=0 && l<=7) {
+				data->append("Sample Type:\t"); data->append(SAMPLE_TYPES[l]); data->append("\n");
+			} else {
+				data->append("Sample Type:\tUndefined\n");
+			}
+						
+			d = 0.0;
+			m_xraw2_class->GetSeqRowSampleVolume(&d);
+			sprintf(strBuf, "%g", d);
+			data->append("Sample Volume:\t"); data->append(strBuf); data->append("\n");
+			
+			d = 0.0;
+			m_xraw2_class->GetSeqRowSampleWeight(&d);
+			sprintf(strBuf, "%g", d);
+			data->append("Sample Weight:\t"); data->append(strBuf); data->append("\n");
+			
+			for(int userInfo = 0; userInfo<5; userInfo++) {
+				str = NULL;
+				m_xraw2_class->GetSeqRowUserLabel(userInfo, &str);
+				data->append("User Label "); 
+				data->append(_itoa(userInfo+1, strBuf, 10));
+				data->append(":\t");
+
+				data->append(_bstr_t(str)); data->append("\n");
+				
+				str = NULL;
+				m_xraw2_class->GetSeqRowUserText(userInfo, &str);
+				data->append("User Text "); 
+				data->append(_itoa(userInfo+1, strBuf, 10));
+				data->append(":\t");
+
+				data->append(_bstr_t(str)); data->append("\n");
+			}
+
+			str = NULL;
+			m_xraw2_class->GetSeqRowVial(&str);
+			data->append("Vial:\t"); data->append(_bstr_t(str)); data->append("\n");			
+		}
+
+		void FinniganRawData::GetErrorLog(std::string *data) {
+			long numData = 0;
+			m_xraw2_class->GetNumErrorLog(&numData);
+
+			char numBuf[20]="";
+
+			for(long dataNumber=0; dataNumber<numData; dataNumber++) {
+				double rt = 0.0;
+				BSTR message = NULL;
+				if(m_xraw2_class->GetErrorLogItem(dataNumber, &rt, &message)!=0) {
+					break;
+				}
+				std::string text = _bstr_t(message);
+				sprintf(numBuf, "%g", rt);
+				data->append(numBuf);
+				data->append("\t");
+				data->append(text);
+				data->append("\n");
+			}
 		}
 
 		void FinniganRawData::CountSpectraByMsLevel(long *ms1, long *ms2, long *ms3plus) {

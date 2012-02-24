@@ -108,7 +108,7 @@ const std::string comment = "Comment";
 // RetentionTime from spectra
 const std::string Mz = "Mz";
 const std::string Intensity = "Intensity";
-	
+
 // Check Sqlite Error
 void cse(int rc) {
 	if( rc!=SQLITE_OK ){
@@ -350,297 +350,361 @@ void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, s
 		PolymerDetection::FindPolymers(mz, charge, mzs, intensities, *offset, *segment, *score, *pValue);
 }
 
-int extractRawDataFile(const char * inputRawFileName, const char * infoFileName, const char * spectraFileName, const char * chromatogramMapFileName,
-	const char *tuneMethodFileName, const char *instrumentMethodFile, const char *sampleInformationFile, const char *errorLogFile) {
+void extractInfoFile(Engine::Readers::FinniganRawData * fRawData, const char *infoFileName) {
 	using namespace std;
+	cout << "Extracting raw file information to file " << infoFileName << "." << endl;
 
-	clock_t startClock = clock();
+	std::ofstream infoOutputStream;
+	infoOutputStream.exceptions(std::ofstream::failbit);
+	infoOutputStream.open(infoFileName);
 
-	Engine::Readers::FinniganRawData * fRawData = NULL;
+	std::string rawFileName;
+	std::string creatDate;
+	std::string instName;
+	std::string instSerial;
+	std::string comment;
+	std::string sampleId;			
+	long numberOfMs1Spectra = 0;
+	long numberOfMs2Spectra = 0;
+	long numberOfMs3PlusSpectra = 0;
+	double runTime = 0.0;
 
-	cout << "Reading raw file: " << inputRawFileName << endl;
+	fRawData->GetRawFileInfo(&rawFileName, &instName, &instSerial, &creatDate, &runTime, &comment, &sampleId, &numberOfMs1Spectra, &numberOfMs2Spectra, &numberOfMs3PlusSpectra);
 
+	infoOutputStream << ::originalRawFileName << '\t' << rawFileName << endl;
+	infoOutputStream << ::numberOfMs1Spectra << '\t' << numberOfMs1Spectra << endl;
+	infoOutputStream << ::numberOfMs2Spectra << '\t' << numberOfMs2Spectra << endl;
+	infoOutputStream << ::numberOfMs3PlusSpectra << '\t' << numberOfMs3PlusSpectra << endl;
+	infoOutputStream << ::instrumentName << '\t' << instName << endl;
+	infoOutputStream << ::instrumentSerial << '\t' << instSerial << endl;
+	infoOutputStream << ::creationDate << '\t' << creatDate << endl;
+	infoOutputStream << ::runTimeInSeconds << '\t' << runTime << endl;
+	infoOutputStream << ::comment << '\t' << comment << endl;
+	infoOutputStream << ::sampleId << '\t' << sampleId << endl;
+
+	infoOutputStream.close();
+}
+
+// While we are reading spectrum by spectrum data, we can produce two files - spectrum information and chromatogram.
+// Extraction of these two is thus bundled into one method for efficiency (it is very slow to list all spectra)
+void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::string spectraFileName, std::string chromatogramMapFileName) {
+	using namespace std;
 	std::vector<double> mzs;
 	std::vector<double> intensities;
 
-	try {
-		fRawData = (Engine::Readers::FinniganRawData*)(Engine::Readers::ReaderFactory::GetRawData(Engine::Readers::FileType::FINNIGAN, const_cast<char*>(inputRawFileName)));		
-	} catch(const char *exception) {
-		cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " - " << exception << "\n";
-		return 1;
+	ofstream spectraOutputStream;
+	if(!spectraFileName.empty()) {
+		cout << "Extracting spectra information to file " << spectraFileName << "." << endl;
+
+		spectraOutputStream.exceptions(std::ofstream::failbit);
+		spectraOutputStream.open(spectraFileName);
+		spectraOutputStream << std::setprecision(12);
+
+		spectraOutputStream 
+			<< ScanId << '\t' 
+			<< ParentMz << '\t'
+			<< TotalIonCurrent << '\t' 
+			<< RetentionTime << '\t' 
+			<< MsLevel << '\t' 
+			<< ParentScan << '\t'
+			<< ChildScans << '\t'			
+			<< IonInjectionTimeMs << '\t'
+			<< CycleTimeSeconds << '\t'
+			<< ElapsedTimeSeconds << '\t'
+			<< DeadTimeSeconds << '\t'
+			<< TimeToNextScanSeconds << '\t'			
+			<< LockMassFound << '\t'
+			<< LockMassShift << '\t'
+			<< ConI << '\t'
+			<< ConA << '\t'
+			<< ConB << '\t'
+			<< ConC << '\t'
+			<< ConD << '\t'
+			<< ConE << '\t'
+			<< DissociationType << '\t'
+
+			<< PolymerSegment << '\t'
+			<< PolymerOffset << '\t'
+			<< PolymerScore << '\t'
+			<< PolymerPValue << '\t'
+
+			<< SourceCurrent << '\t'
+			<< VacuumIonGauge << '\t'
+			<< VacuumConvectronGauge << '\t'
+			<< FtVacuumPenningGauge << '\t'
+			<< FtVacuumPiraniGauge1 << '\t'
+			<< IonMultiplier1 << '\t'
+			<< IonMultiplier2 << '\t'
+			<< FtCeMeasureVoltage << '\t'
+			<< FtAnalyzerTemp
+			<< endl;		
 	}
 
-	try {
-		if(infoFileName!=NULL) {
-			cout << "Extracting raw file information to file " << infoFileName << "." << endl;
+	ChromatogramMap *map = NULL;
 
-			std::ofstream infoOutputStream;
-			infoOutputStream.exceptions(std::ofstream::failbit);
-			infoOutputStream.open(infoFileName);
+	int firstScan = fRawData->GetFirstScanNum();
+	int totalScans = fRawData->GetLastScanNum()-firstScan+1;
+	int scan_num = firstScan;
+	int percentOutput = 0;
+	bool firstSpectrum=true;
+	while(scan_num <= fRawData->GetLastScanNum()) {
 
-			std::string rawFileName;
-			std::string creatDate;
-			std::string instName;
-			std::string instSerial;
-			std::string comment;
-			std::string sampleId;			
-			long numberOfMs1Spectra = 0;
-			long numberOfMs2Spectra = 0;
-			long numberOfMs3PlusSpectra = 0;
-			double runTime = 0.0;
+		double parentMz;
+		double tic;
+		double retentionTime;
+		int msLevel;
+		int parentScan;
+		double lowMass;
+		double highMass;
+		int childScans;
+		double ionInjectionTimeMs;
+		double cycleTimeSeconds;
+		double elapsedTimeSeconds;
+		double deadTimeSeconds;
+		double timeToNextScanSeconds;
+		bool lockMassFound;
+		double lockMassShift;
+		double conI, conA, conB, conC, conD, conE;
 
-			fRawData->GetRawFileInfo(&rawFileName, &instName, &instSerial, &creatDate, &runTime, &comment, &sampleId, &numberOfMs1Spectra, &numberOfMs2Spectra, &numberOfMs3PlusSpectra);
+		double polymerSegment=-1.0;
+		double polymerOffset=-1.0;
+		double polymerScore=0.0;
+		double polymerPValue=1.0;
 
-			infoOutputStream << ::originalRawFileName << '\t' << rawFileName << endl;
-			infoOutputStream << ::numberOfMs1Spectra << '\t' << numberOfMs1Spectra << endl;
-			infoOutputStream << ::numberOfMs2Spectra << '\t' << numberOfMs2Spectra << endl;
-			infoOutputStream << ::numberOfMs3PlusSpectra << '\t' << numberOfMs3PlusSpectra << endl;
-			infoOutputStream << ::instrumentName << '\t' << instName << endl;
-			infoOutputStream << ::instrumentSerial << '\t' << instSerial << endl;
-			infoOutputStream << ::creationDate << '\t' << creatDate << endl;
-			infoOutputStream << ::runTimeInSeconds << '\t' << runTime << endl;
-			infoOutputStream << ::comment << '\t' << comment << endl;
-			infoOutputStream << ::sampleId << '\t' << sampleId << endl;
+		double sourceCurrent;
+		double vacuumIonGauge;
+		double vacuumConvectronGauge;
+		double ftVacuumPenningGauge;
+		double ftVacuumPiraniGauge1;
+		double ionMultiplier1;
+		double ionMultiplier2;
+		double ftCeMeasureVoltage;
+		double ftAnalyzerTemp;
 
-			infoOutputStream.close();
+		int newPercent=100*(scan_num-firstScan)/totalScans;
+		if(newPercent>percentOutput) {
+			cout << newPercent << "%\n";
+			percentOutput = newPercent;
 		}
 
-		ofstream spectraOutputStream;
-		if(spectraFileName!=NULL) {
-			cout << "Extracting spectra information to file " << spectraFileName << "." << endl;
+		fRawData->GetScanInfo(scan_num, 
+			&tic, &retentionTime, &lowMass, &highMass, &childScans, &ionInjectionTimeMs, 
+			&cycleTimeSeconds, &elapsedTimeSeconds,
+			&timeToNextScanSeconds, 
+			&lockMassFound, &lockMassShift,
+			&conI, &conA, &conB, &conC, &conD, &conE,
+			&sourceCurrent, &vacuumIonGauge, &vacuumConvectronGauge, &ftVacuumPenningGauge, &ftVacuumPiraniGauge1, &ionMultiplier1, &ionMultiplier2, &ftCeMeasureVoltage, &ftAnalyzerTemp);
 
-			spectraOutputStream.exceptions(std::ofstream::failbit);
-			spectraOutputStream.open(spectraFileName);
-			spectraOutputStream << std::setprecision(12);
+		msLevel = fRawData->GetMSLevel(scan_num);
+
+		parentMz = msLevel!=1 ? fRawData->GetParentMz(scan_num) : 0;
+
+		if(msLevel==1) {
+			deadTimeSeconds = cycleTimeSeconds-elapsedTimeSeconds;
+			parentScan=0;
+			if(map==NULL && !chromatogramMapFileName.empty()) {
+				cout << "Extracting chromatogram bitmap to file " << chromatogramMapFileName << "." << endl;
+				map = new ChromatogramMap(chromatogramMzBins, lowMass, highMass);
+			}
+			if(map!=NULL) {
+				fRawData->GetRawData(&mzs, &intensities, scan_num);
+				map->addSpectrum(&mzs, &intensities);
+			}
+		} else {
+			if(!spectraFileName.empty()) {
+				deadTimeSeconds = timeToNextScanSeconds - elapsedTimeSeconds;
+				parentScan = fRawData->GetParentScan(scan_num);
+				getPolymerScore(fRawData, scan_num, &mzs, &intensities, 
+					&polymerSegment, &polymerOffset, &polymerScore, &polymerPValue);
+			}
+		}			
+
+		if(!spectraFileName.empty()) {
+			spectraOutputStream 
+				<< scan_num << '\t';
+
+			if(parentMz!=0)
+				spectraOutputStream << parentMz << '\t';
+			else
+				spectraOutputStream << '\t';
 
 			spectraOutputStream 
-				<< ScanId << '\t' 
-				<< ParentMz << '\t'
-				<< TotalIonCurrent << '\t' 
-				<< RetentionTime << '\t' 
-				<< MsLevel << '\t' 
-				<< ParentScan << '\t'
-				<< ChildScans << '\t'			
-				<< IonInjectionTimeMs << '\t'
-				<< CycleTimeSeconds << '\t'
-				<< ElapsedTimeSeconds << '\t'
-				<< DeadTimeSeconds << '\t'
-				<< TimeToNextScanSeconds << '\t'			
-				<< LockMassFound << '\t'
-				<< LockMassShift << '\t'
-				<< ConI << '\t'
-				<< ConA << '\t'
-				<< ConB << '\t'
-				<< ConC << '\t'
-				<< ConD << '\t'
-				<< ConE << '\t'
-				<< DissociationType << '\t'
+				<< tic << '\t' 
+				<< retentionTime << '\t' 				
+				<< msLevel << '\t';
 
-				<< PolymerSegment << '\t'
-				<< PolymerOffset << '\t'
-				<< PolymerScore << '\t'
-				<< PolymerPValue << '\t'
+			if(parentScan!=0)	
+				spectraOutputStream << parentScan << '\t';
+			else
+				spectraOutputStream << '\t';
 
-				<< SourceCurrent << '\t'
-				<< VacuumIonGauge << '\t'
-				<< VacuumConvectronGauge << '\t'
-				<< FtVacuumPenningGauge << '\t'
-				<< FtVacuumPiraniGauge1 << '\t'
-				<< IonMultiplier1 << '\t'
-				<< IonMultiplier2 << '\t'
-				<< FtCeMeasureVoltage << '\t'
-				<< FtAnalyzerTemp
-				<< endl;		
-		}
+			spectraOutputStream 
+				<< childScans << '\t';
 
-		ChromatogramMap *map = NULL;
-
-		int firstScan = fRawData->GetFirstScanNum();
-		int totalScans = fRawData->GetLastScanNum()-firstScan+1;
-		int scan_num = firstScan;
-		int percentOutput = 0;
-		bool firstSpectrum=true;
-		while(scan_num <= fRawData->GetLastScanNum()) {
-
-			double parentMz;
-			double tic;
-			double retentionTime;
-			int msLevel;
-			int parentScan;
-			double lowMass;
-			double highMass;
-			int childScans;
-			double ionInjectionTimeMs;
-			double cycleTimeSeconds;
-			double elapsedTimeSeconds;
-			double deadTimeSeconds;
-			double timeToNextScanSeconds;
-			bool lockMassFound;
-			double lockMassShift;
-			double conI, conA, conB, conC, conD, conE;
-
-			double polymerSegment=-1.0;
-			double polymerOffset=-1.0;
-			double polymerScore=0.0;
-			double polymerPValue=1.0;
-
-			double sourceCurrent;
-			double vacuumIonGauge;
-			double vacuumConvectronGauge;
-			double ftVacuumPenningGauge;
-			double ftVacuumPiraniGauge1;
-			double ionMultiplier1;
-			double ionMultiplier2;
-			double ftCeMeasureVoltage;
-			double ftAnalyzerTemp;
-
-			int newPercent=100*(scan_num-firstScan)/totalScans;
-			if(newPercent>percentOutput) {
-				cout << newPercent << "%\n";
-				percentOutput = newPercent;
+			if(firstSpectrum && (ionInjectionTimeMs == (int)ionInjectionTimeMs)) {
+				// We need to make sure that we mark the first ionInjectionTime as a double, so
+				// Spotfire does not get confused if many injection times look like integers.
+				// Output the integer (e.g. 300) as 300.0
+				spectraOutputStream << ionInjectionTimeMs << ".0\t";
+			} else  {
+				spectraOutputStream << ionInjectionTimeMs << '\t';
 			}
 
-			fRawData->GetScanInfo(scan_num, 
-				&tic, &retentionTime, &lowMass, &highMass, &childScans, &ionInjectionTimeMs, 
-				&cycleTimeSeconds, &elapsedTimeSeconds,
-				&timeToNextScanSeconds, 
-				&lockMassFound, &lockMassShift,
-				&conI, &conA, &conB, &conC, &conD, &conE,
-				&sourceCurrent, &vacuumIonGauge, &vacuumConvectronGauge, &ftVacuumPenningGauge, &ftVacuumPiraniGauge1, &ionMultiplier1, &ionMultiplier2, &ftCeMeasureVoltage, &ftAnalyzerTemp);
+			char dissociationType[11];
+			fRawData->GetDissociationType(scan_num, dissociationType);
 
-			msLevel = fRawData->GetMSLevel(scan_num);
+			spectraOutputStream 
+				<< cycleTimeSeconds << '\t'
+				<< elapsedTimeSeconds << '\t'
+				<< deadTimeSeconds << '\t'				
+				<< timeToNextScanSeconds << '\t'
+				<< lockMassFound << '\t'
+				<< lockMassShift << '\t'
+				<< conI << '\t'
+				<< conA << '\t'
+				<< conB << '\t'
+				<< conC << '\t'
+				<< conD << '\t'
+				<< conE << '\t'
+				<< dissociationType << '\t';
 
-			parentMz = msLevel!=1 ? fRawData->GetParentMz(scan_num) : 0;
-
-			if(msLevel==1) {
-				deadTimeSeconds = cycleTimeSeconds-elapsedTimeSeconds;
-				parentScan=0;
-				if(map==NULL && chromatogramMapFileName!=NULL) {
-					cout << "Extracting chromatogram bitmap to file " << chromatogramMapFileName << "." << endl;
-					map = new ChromatogramMap(chromatogramMzBins, lowMass, highMass);
-				}
-				if(map!=NULL) {
-					fRawData->GetRawData(&mzs, &intensities, scan_num);
-					map->addSpectrum(&mzs, &intensities);
-				}
+			// Polymers
+			spectraOutputStream
+				<< polymerSegment << '\t'
+				<< polymerOffset << '\t'
+				<< polymerScore << '\t';
+			if(firstSpectrum && (polymerPValue == (int)polymerPValue)) {
+				spectraOutputStream << polymerPValue << ".0";
 			} else {
-				if(spectraFileName!=NULL) {
-					deadTimeSeconds = timeToNextScanSeconds - elapsedTimeSeconds;
-					parentScan = fRawData->GetParentScan(scan_num);
-					getPolymerScore(fRawData, scan_num, &mzs, &intensities, 
-						&polymerSegment, &polymerOffset, &polymerScore, &polymerPValue);
-				}
-			}			
-
-			if(spectraFileName!=NULL) {
-				spectraOutputStream 
-					<< scan_num << '\t';
-
-				if(parentMz!=0)
-					spectraOutputStream << parentMz << '\t';
-				else
-					spectraOutputStream << '\t';
-
-				spectraOutputStream 
-					<< tic << '\t' 
-					<< retentionTime << '\t' 				
-					<< msLevel << '\t';
-
-				if(parentScan!=0)	
-					spectraOutputStream << parentScan << '\t';
-				else
-					spectraOutputStream << '\t';
-
-				spectraOutputStream 
-					<< childScans << '\t';
-
-				if(firstSpectrum && (ionInjectionTimeMs == (int)ionInjectionTimeMs)) {
-					// We need to make sure that we mark the first ionInjectionTime as a double, so
-					// Spotfire does not get confused if many injection times look like integers.
-					// Output the integer (e.g. 300) as 300.0
-					spectraOutputStream << ionInjectionTimeMs << ".0\t";
-				} else  {
-					spectraOutputStream << ionInjectionTimeMs << '\t';
-				}
-
-				char dissociationType[11];
-				fRawData->GetDissociationType(scan_num, dissociationType);
-
-				spectraOutputStream 
-					<< cycleTimeSeconds << '\t'
-					<< elapsedTimeSeconds << '\t'
-					<< deadTimeSeconds << '\t'				
-					<< timeToNextScanSeconds << '\t'
-					<< lockMassFound << '\t'
-					<< lockMassShift << '\t'
-					<< conI << '\t'
-					<< conA << '\t'
-					<< conB << '\t'
-					<< conC << '\t'
-					<< conD << '\t'
-					<< conE << '\t'
-					<< dissociationType << '\t';
-
-				// Polymers
-				spectraOutputStream
-					<< polymerSegment << '\t'
-					<< polymerOffset << '\t'
-					<< polymerScore << '\t';
-				if(firstSpectrum && (polymerPValue == (int)polymerPValue)) {
-					spectraOutputStream << polymerPValue << ".0";
-				} else {
-					spectraOutputStream << polymerPValue;
-				}
-
-				// Status log
-				spectraOutputStream << '\t'
-					<< sourceCurrent << '\t'
-					<< vacuumIonGauge << '\t'
-					<< vacuumConvectronGauge << '\t'
-					<< ftVacuumPenningGauge << '\t'
-					<< ftVacuumPiraniGauge1 << '\t'
-					<< ionMultiplier1 << '\t'
-					<< ionMultiplier2 << '\t'
-					<< ftCeMeasureVoltage << '\t'
-					<< ftAnalyzerTemp;
-
-				spectraOutputStream 
-					<< '\n';
+				spectraOutputStream << polymerPValue;
 			}
 
-			firstSpectrum=false;
+			// Status log
+			spectraOutputStream << '\t'
+				<< sourceCurrent << '\t'
+				<< vacuumIonGauge << '\t'
+				<< vacuumConvectronGauge << '\t'
+				<< ftVacuumPenningGauge << '\t'
+				<< ftVacuumPiraniGauge1 << '\t'
+				<< ionMultiplier1 << '\t'
+				<< ionMultiplier2 << '\t'
+				<< ftCeMeasureVoltage << '\t'
+				<< ftAnalyzerTemp;
 
-			scan_num = fRawData->GetNextScanNum(scan_num);
+			spectraOutputStream 
+				<< '\n';
 		}
-		
-		if(spectraFileName!=NULL) {
-			spectraOutputStream.close();
-		}
 
-		if(map!=NULL) {
-			map->dumpEqualized(chromatogramMapFileName);
-			delete map;
-		}
+		firstSpectrum=false;
 
-
-	} catch(const char *exception) {
-		std::cerr << "ERROR: problem generating output data file " << " - " << exception << " " << strerror(errno) << "\n";
-		return 1;
-	} catch(std::exception &e) {		
-		std::cerr << "ERROR: problem generating output data file " << " - " << strerror(errno) << "\n";
-		return 1;
+		scan_num = fRawData->GetNextScanNum(scan_num);
 	}
 
-	if(fRawData) {
-		fRawData->Close();
-		delete fRawData;
+	if(!spectraFileName.empty()) {
+		spectraOutputStream.close();
 	}
 
-	clock_t endClock = clock();
+	if(map!=NULL) {
+		map->dumpEqualized(chromatogramMapFileName);
+		delete map;
+	}
+}
 
-	std::cout << "Took " << ((double)endClock-startClock)/CLOCKS_PER_SEC << " seconds \n";
+void dumpToFile(std::string file, std::string contents) {
+	std::ofstream out;
+	out.exceptions(std::ofstream::failbit);
+	out.open(file);
+	out << std::setprecision(12);
+	out << contents;
+	out.close();
+}
 
-	return 0;
+void extractTuneMethodData(Engine::Readers::FinniganRawData *fRawData, std::string fileName) {
+	std::cout << "Extracting tune method information to file " << fileName << "." << std::endl;
+	std::string data;
+	fRawData->GetTuneMethod(&data);
+	dumpToFile(fileName, data);	
+}
+
+void extractInstrumentMethodData(Engine::Readers::FinniganRawData *fRawData, std::string fileName) {
+	std::cout << "Extracting instrument method information to file " << fileName << "." << std::endl;
+	std::string data;
+	fRawData->GetInstrumentMethod(&data);
+	dumpToFile(fileName, data);	
+}
+
+void extractSampleInfoData(Engine::Readers::FinniganRawData *fRawData, std::string fileName) {
+	std::cout << "Extracting sample information to file " << fileName << "." << std::endl;
+	std::string data;
+	fRawData->GetSampleInformation(&data);
+	dumpToFile(fileName, data);	
+}
+
+void extractErrorLogData(Engine::Readers::FinniganRawData *fRawData, std::string fileName) {
+	std::cout << "Extracting error log information to file " << fileName << "." << std::endl;
+	std::string data;
+	fRawData->GetErrorLog(&data);
+	dumpToFile(fileName, data);	
+}
+
+int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, std::string spectraFileName, std::string chromatogramMapFileName,
+	std::string tuneMethodFileName, std::string instrumentMethodFileName, std::string sampleInfoFileName, std::string errorLogFileName) {
+		using namespace std;
+
+		clock_t startClock = clock();
+
+		Engine::Readers::FinniganRawData * fRawData = NULL;
+
+		cout << "Reading raw file: " << inputRawFileName << endl;
+
+		try {
+			fRawData = (Engine::Readers::FinniganRawData*)(Engine::Readers::ReaderFactory::GetRawData(Engine::Readers::FileType::FINNIGAN, const_cast<char*>(inputRawFileName.c_str())));		
+		} catch(const char *exception) {
+			cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " - " << exception << "\n";
+			return 1;
+		}
+
+		try {
+			if(!infoFileName.empty()) {
+				extractInfoFile(fRawData, infoFileName.c_str());
+			}
+
+			if(!tuneMethodFileName.empty()) {
+				extractTuneMethodData(fRawData, tuneMethodFileName);
+			}
+
+			if(!instrumentMethodFileName.empty()) {
+				extractInstrumentMethodData(fRawData, instrumentMethodFileName);
+			}
+
+			if(!sampleInfoFileName.empty()) {
+				extractSampleInfoData(fRawData, sampleInfoFileName);
+			}
+
+			if(!errorLogFileName.empty()) {
+				extractErrorLogData(fRawData, errorLogFileName);
+			}
+
+			extractPerSpectrumData(fRawData, spectraFileName, chromatogramMapFileName);
+
+		} catch(const char *exception) {
+			std::cerr << "ERROR: problem generating output data file " << " - " << exception << " " << strerror(errno) << "\n";
+			return 1;
+		} catch(std::exception &e) {				
+			std::cerr << "ERROR: problem generating output data file " << " - " << strerror(errno) << " - " << e.what() << "\n";
+			return 1;
+		}
+
+		if(fRawData) {
+			fRawData->Close();
+			delete fRawData;
+		}
+
+		clock_t endClock = clock();
+
+		std::cout << "Took " << ((double)endClock-startClock)/CLOCKS_PER_SEC << " seconds \n";
+
+		return 0;
 }
 
 int extractRange(const char *inputRawFileName, const char *peaksFileName, double minMzValue, double maxMzValue) {
@@ -989,22 +1053,21 @@ int main(int argc, char* argv[])
 
 		std::string infoFileName = getOption(paramVector, infoFile);
 		std::string spectraFileName = getOption(paramVector, spectraFile);
-		std::string chromatogramMap = getOption(paramVector, chromatogramFile);
+		std::string chromatogramMapFileName = getOption(paramVector, chromatogramFile);
 		std::string tuneMethodFileName = getOption(paramVector, tuneMethodFile);
 		std::string instrumentMethodFileName = getOption(paramVector, instrumentMethodFile);
 		std::string sampleInfoFileName = getOption(paramVector, sampleInformationFile);
 		std::string errorLogFileName = getOption(paramVector, errorLogFile);
 
-		const char *chromatogramMapFileName = NULL;
-		if(!chromatogramMap.empty()) {
-			chromatogramMapFileName = chromatogramMap.c_str();
-		}
-
 		return extractRawDataFile(
-			inputRawFileName.c_str(), 
-			infoFileName.empty() ? NULL : infoFileName.c_str(), 
-			spectraFileName.empty() ? NULL : spectraFileName.c_str(), 
-			chromatogramMapFileName);
+			inputRawFileName, 
+			infoFileName, 
+			spectraFileName, 
+			chromatogramMapFileName,
+			tuneMethodFileName,
+			instrumentMethodFileName,
+			sampleInfoFileName,
+			errorLogFileName);
 	} else if (hasOption(paramVector, mzRange)) {
 		std::string inputRawFileName = getOption(paramVector, rawFile);
 		if (inputRawFileName.empty()) {
