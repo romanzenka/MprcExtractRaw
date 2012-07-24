@@ -38,7 +38,7 @@ void ChromatogramMap::addSpectrum(const TMzs *inMzs, const TIntensities *inInten
 	while(mzs!=mzsEnd) 
 	{
 		double mz = *mzs;
-
+			
 		// Where does the value go into our array
 		int bucket = (int)(((mz-minMass)/massRange)*massResolution);
 		if (bucket>=0 && bucket<massResolution) 
