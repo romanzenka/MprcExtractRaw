@@ -49,6 +49,7 @@ const std::string peaksFile = "--peaks";
 
 // Settings
 const int chromatogramMzBins = 1000; // How many bins per m/z range to report
+const double secondPeakMinDistanceFromBase = 5; // How far can the second most abundant peak be from the base peak (Da)
 
 // Column names for the spectra data file
 const std::string ScanId = "Scan Id";
@@ -76,6 +77,11 @@ const std::string PolymerSegment = "Polymer Segment Size";
 const std::string PolymerOffset = "Polymer Offset";
 const std::string PolymerScore = "Polymer Score";
 const std::string PolymerPValue = "Polymer p-value";
+const std::string BasePeakMz = "Base Peak m/z";
+const std::string BasePeakIntensity = "Base Peak Intensity";
+const std::string SecondPeakMz = "Second Peak m/z";
+const std::string SecondPeakIntensity = "Second Peak Intensity";
+
 // API SOURCE
 const std::string SourceCurrent = "Source Current (uA)";
 // VACUUM
@@ -350,6 +356,29 @@ void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, s
 		PolymerDetection::FindPolymers(mz, charge, mzs, intensities, *offset, *segment, *score, *pValue);
 }
 
+void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
+	double *basePeakMz, double *basePeakIntensity, double *secondPeakMz, double *secondPeakIntensity, double minDistanceSecondFromBaseDa) { 
+	*basePeakMz = 0.0;
+	*basePeakIntensity = 0.0;	
+	std::vector<double>::const_iterator intIter = intensities->cbegin();
+	for (std::vector<double>::const_iterator mzsIter = mzs->cbegin(); mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+		if(*intIter > *basePeakIntensity) {
+			*basePeakIntensity = *intIter;
+			*basePeakMz = *mzsIter;
+		}
+	}
+	*secondPeakMz = 0.0;
+	*secondPeakIntensity = 0.0;
+	for (std::vector<double>::const_iterator mzsIter = mzs->cbegin(); mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+		if(fabs(*mzsIter-*secondPeakMz)>minDistanceSecondFromBaseDa
+			&& *intIter > *secondPeakIntensity) {
+			*secondPeakIntensity = *intIter;
+			*secondPeakMz = *mzsIter;
+		}
+	}
+}
+
+
 void extractInfoFile(Engine::Readers::FinniganRawData * fRawData, const char *infoFileName) {
 	using namespace std;
 	cout << "Extracting raw file information to file " << infoFileName << "." << endl;
@@ -428,6 +457,11 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			<< PolymerScore << '\t'
 			<< PolymerPValue << '\t'
 
+			<< BasePeakMz  << '\t'
+			<< BasePeakIntensity  << '\t'
+			<< SecondPeakMz  << '\t'
+			<< SecondPeakIntensity  << '\t'
+
 			<< SourceCurrent << '\t'
 			<< VacuumIonGauge << '\t'
 			<< VacuumConvectronGauge << '\t'
@@ -470,6 +504,11 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 		double polymerOffset=-1.0;
 		double polymerScore=0.0;
 		double polymerPValue=1.0;
+
+		double basePeakMz=0.0;
+		double basePeakIntensity=0.0;
+		double secondPeakMz=0.0;
+		double secondPeakIntensity=0.0;
 
 		double sourceCurrent;
 		double vacuumIonGauge;
@@ -516,6 +555,9 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 				parentScan = fRawData->GetParentScan(scan_num);
 				getPolymerScore(fRawData, scan_num, &mzs, &intensities, 
 					&polymerSegment, &polymerOffset, &polymerScore, &polymerPValue);
+				getBasePeak(scan_num, &mzs, &intensities, 
+					&basePeakMz, &basePeakIntensity, &secondPeakMz, &secondPeakIntensity,
+					secondPeakMinDistanceFromBase);
 			}
 		}			
 
@@ -578,6 +620,13 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			} else {
 				spectraOutputStream << polymerPValue;
 			}
+
+			// Base peak and second most intense
+			spectraOutputStream 
+				<< basePeakMz << '\t'
+				<< basePeakIntensity << '\t'
+				<< secondPeakMz << '\t'
+				<< secondPeakIntensity << '\t';
 
 			// Status log
 			spectraOutputStream << '\t'
