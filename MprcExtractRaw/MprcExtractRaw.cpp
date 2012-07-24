@@ -1029,7 +1029,6 @@ void printUsage() {
 	std::cerr << "* " << BasePeakIntensity << "\tBase peak intensity" << std::endl;
 	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak m/z (>" << secondPeakMinDistanceFromBase << " Da from base peak)" << std::endl;
 	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak intensity" << std::endl;
-	std::cerr << "* " << PolymerPValue << "\tProbability that a higher or equal polymer score could be achieved randomly" << std::endl;
 
 	std::cerr << std::endl;
 
