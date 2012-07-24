@@ -1025,6 +1025,11 @@ void printUsage() {
 	std::cerr << "* " << PolymerOffset << "\tThe initial polymer mass (end of the polymer before segments start)" << std::endl;
 	std::cerr << "* " << PolymerScore << "\tPolymer score" << std::endl;
 	std::cerr << "* " << PolymerPValue << "\tProbability that a higher or equal polymer score could be achieved randomly" << std::endl;
+	std::cerr << "* " << BasePeakMz << "\tBase peak m/z" << std::endl;
+	std::cerr << "* " << BasePeakIntensity << "\tBase peak intensity" << std::endl;
+	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak m/z (>" << secondPeakMinDistanceFromBase << " Da from base peak)" << std::endl;
+	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak intensity" << std::endl;
+	std::cerr << "* " << PolymerPValue << "\tProbability that a higher or equal polymer score could be achieved randomly" << std::endl;
 
 	std::cerr << std::endl;
 
