@@ -359,9 +359,10 @@ void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, s
 void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
 	double *basePeakMz, double *basePeakIntensity, double *secondPeakMz, double *secondPeakIntensity, double minDistanceSecondFromBaseDa) { 
 	*basePeakMz = 0.0;
-	*basePeakIntensity = 0.0;	
+	*basePeakIntensity = 0.0;		
+	std::vector<double>::const_iterator mzsIter = mzs->cbegin();
 	std::vector<double>::const_iterator intIter = intensities->cbegin();
-	for (std::vector<double>::const_iterator mzsIter = mzs->cbegin(); mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+	for (; mzsIter!=mzs->cend(); mzsIter++, intIter++) {
 		if(*intIter > *basePeakIntensity) {
 			*basePeakIntensity = *intIter;
 			*basePeakMz = *mzsIter;
@@ -369,9 +370,10 @@ void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *in
 	}
 	*secondPeakMz = 0.0;
 	*secondPeakIntensity = 0.0;
-	for (std::vector<double>::const_iterator mzsIter = mzs->cbegin(); mzsIter!=mzs->cend(); mzsIter++, intIter++) {
-		if(fabs(*mzsIter-*secondPeakMz)>minDistanceSecondFromBaseDa
-			&& *intIter > *secondPeakIntensity) {
+	mzsIter = mzs->cbegin();
+	intIter = intensities->cbegin();
+	for (;mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+		if(*intIter > *secondPeakIntensity && fabs(*mzsIter-*basePeakMz)>minDistanceSecondFromBaseDa) {
 			*secondPeakIntensity = *intIter;
 			*secondPeakMz = *mzsIter;
 		}
@@ -608,10 +610,10 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 				<< conC << '\t'
 				<< conD << '\t'
 				<< conE << '\t'
-				<< dissociationType << '\t';
+				<< dissociationType;
 
 			// Polymers
-			spectraOutputStream
+			spectraOutputStream << '\t'
 				<< polymerSegment << '\t'
 				<< polymerOffset << '\t'
 				<< polymerScore << '\t';
@@ -622,11 +624,11 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			}
 
 			// Base peak and second most intense
-			spectraOutputStream 
-				<< basePeakMz << '\t'
-				<< basePeakIntensity << '\t'
-				<< secondPeakMz << '\t'
-				<< secondPeakIntensity << '\t';
+			spectraOutputStream << '\t'
+				<< basePeakMz << (firstSpectrum && basePeakMz==0.0 ? ".0" : "") << '\t'
+				<< basePeakIntensity << (firstSpectrum && basePeakIntensity==0.0 ? ".0" : "") <<'\t'
+				<< secondPeakMz << (firstSpectrum && secondPeakMz==0.0 ? ".0" : "") <<'\t'
+				<< secondPeakIntensity << (firstSpectrum && secondPeakIntensity==0.0 ? ".0" : "");
 
 			// Status log
 			spectraOutputStream << '\t'
@@ -1028,7 +1030,7 @@ void printUsage() {
 	std::cerr << "* " << BasePeakMz << "\tBase peak m/z" << std::endl;
 	std::cerr << "* " << BasePeakIntensity << "\tBase peak intensity" << std::endl;
 	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak m/z (>" << secondPeakMinDistanceFromBase << " Da from base peak)" << std::endl;
-	std::cerr << "* " << SecondPeakMz << "\tSecond highest peak intensity" << std::endl;
+	std::cerr << "* " << SecondPeakIntensity << "\tSecond highest peak intensity" << std::endl;
 
 	std::cerr << std::endl;
 
