@@ -34,13 +34,12 @@
 //XRawfile2.dll
 
 #ifdef XCALIBUR_INSTALLED
-#import "..\bin\xrawfile2.dll"
+#import "..\bin\XRawfile2.dll" rename_namespace("XRawfile")
 
 #include <iostream>
 #include <hash_map>
 
 using namespace stdext ;
-
 
 namespace Engine {
  namespace Readers
@@ -68,15 +67,13 @@ namespace Engine {
 			int *marr_data_block ; 
 			float *marr_temp_data_block ; 
 			
-			
-			XRAWFILE2Lib::IXRawfile *m_xraw2_class ;
+						
+			XRawfile::IXRawfile2Ptr m_xraw2_class ;
 			
 
 			void SetDataSize(int sz) ; 
 			int	ReadSpectraFloats(int spectra_num) ; 
 			int GetXRawFileInstance() ;
-
-			HRESULT __stdcall MyCoCreateInstance(LPCTSTR szDllName, IN REFCLSID rclsid, IUnknown* pUnkOuter, IN REFIID riid, OUT LPVOID FAR* ppv);
 
 		public:
 			~FinniganRawData(void) ;

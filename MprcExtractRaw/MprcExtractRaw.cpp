@@ -84,6 +84,7 @@ const std::string SecondPeakIntensity = "Second Peak Intensity";
 
 // API SOURCE
 const std::string SourceCurrent = "Source Current (uA)";
+const std::string SprayCurrent = "Spray Current (uA)";
 // VACUUM
 const std::string VacuumIonGauge = "Vacuum Ion Gauge (E-5 Torr)";
 const std::string VacuumConvectronGauge = "Vacuum Convectron Gauge (Torr)";

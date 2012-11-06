@@ -34,8 +34,7 @@ namespace Engine
 				marr_rawfileName = 0 ; 
 			}
 			// Let the COM object go
-			if(m_xraw2_class != NULL)
-				m_xraw2_class->Release();
+			m_xraw2_class = NULL;
 		};
 
 		FinniganRawData::FinniganRawData(void)
@@ -906,7 +905,7 @@ namespace Engine
 
 			switch(section) {
 			case 1: // API SOURCE
-				if(sLabel=="Source Current (uA):") {
+				if(sLabel=="Source Current (uA):" || sLabel=="Spray Current (uA):") {
 					*sourceCurrent = atof(sData.c_str());
 				}						
 				break;
@@ -1201,66 +1200,17 @@ namespace Engine
 		int FinniganRawData::GetXRawFileInstance(void)
 		{
 			CoInitialize( NULL );
-			CLSID clsid ; 
+		
+			// use the latest version of IXRawfile that will initialize
 
-			HRESULT res =  CLSIDFromString(L"{5FE970B2-29C3-11D3-811D-00104B304896}", &clsid ); 	
-
-			if (res ==REGDB_E_WRITEREGDB)
-			{
-				throw "Unable to instantiate Finnigan objects: XRawFile from XRawfile.dll (version 2.0.0). Please check that the following dlls from XCalibur are avaialble on your system: CFRDBResources.dll, CFRUtil.dll, ExploreDataObjects.dll, ExploreDataObjectsManaged.dll, ExploreDataObjectsps.dll, FControl2.dll, Fglobal.dll, Fileio.dll, finDB.dll, finSSClientLib.dll, Fregistry.dll, XRawfile2.dll" ;
+			HRESULT hr=m_xraw2_class.CreateInstance("MSFileReader.XRawfile.1", 0, CLSCTX_INPROC_SERVER);
+            if (FAILED(hr))
+            {
+                std::cerr << "error: " << hr << "\n";
+				throw "Unable to initialize XRawfile; is MSFileReader installed? Reading Thermo RAW files requires MSFileReader to be installed. It is available for download at:\nhttp://sjsupport.thermofinnigan.com/public/detail.asp?id=703";
 			}
-			IID riid ;
-
-			res = IIDFromString(L"{5FE970B1-29C3-11D3-811D-00104B304896}", &riid) ; 
-
-			if (res == E_INVALIDARG)
-			{
-				throw "Unable to instantiate Finnigan objects: XRawFile from XRawfile.dll (version 2.0.0). Please check that the following dlls from XCalibur are avaialble on your system: CFRDBResources.dll, CFRUtil.dll, ExploreDataObjects.dll, ExploreDataObjectsManaged.dll, ExploreDataObjectsps.dll, FControl2.dll, Fglobal.dll, Fileio.dll, finDB.dll, finSSClientLib.dll, Fregistry.dll, XRawfile2.dll" ;
-			}
-
-			res = CoCreateInstance(clsid, NULL,CLSCTX_INPROC_SERVER, riid, (void **) &m_xraw2_class);
-			if(res != S_OK)
-			{
-				res = MyCoCreateInstance(LPCTSTR("XRawfile2.dll"), clsid, NULL, riid, (void **) &m_xraw2_class);
-				
-				if(res != S_OK)
-				{
-					throw "Unable to instantiate Finnigan objects: XRawFile from XRawfile.dll (version 2.0.0). Please check that the following dlls from XCalibur are avaialble on your system: CFRDBResources.dll, CFRUtil.dll, ExploreDataObjects.dll, ExploreDataObjectsManaged.dll, ExploreDataObjectsps.dll, FControl2.dll, Fglobal.dll, Fileio.dll, finDB.dll, finSSClientLib.dll, Fregistry.dll, XRawfile2.dll" ;
-				}
-			}
-			
+		
 			return 0;
-		}
-
-		HRESULT __stdcall FinniganRawData::MyCoCreateInstance(LPCTSTR szDllName, IN REFCLSID rclsid, IUnknown* pUnkOuter, IN REFIID riid, OUT LPVOID FAR* ppv)
-		{
-		  HRESULT hr = REGDB_E_KEYMISSING;
-
-		  HMODULE hDll = ::LoadLibrary(szDllName);
-		  if (hDll == 0)
-			return hr;
-
-		  typedef HRESULT (__stdcall *pDllGetClassObject)(IN REFCLSID rclsid, IN REFIID riid, OUT LPVOID FAR* ppv);
-
-		  pDllGetClassObject GetClassObject = (pDllGetClassObject)::GetProcAddress(hDll, "DllGetClassObject");
-
-		  if (GetClassObject == 0)
-		  {
-			::FreeLibrary(hDll);
-			return hr;
-		  }
-
-		  IClassFactory *pIFactory;
-
-		  hr = GetClassObject(rclsid, IID_IClassFactory, (LPVOID *)&pIFactory);
-
-		  if (!SUCCEEDED(hr))
-			return hr;
-
-		  hr = pIFactory->CreateInstance(pUnkOuter, riid, ppv);
-		  pIFactory->Release();
-
-		  return hr;
 		}
 	}
 }
