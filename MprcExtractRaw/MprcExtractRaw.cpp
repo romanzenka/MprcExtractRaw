@@ -541,13 +541,13 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 
 		parentMz = msLevel!=1 ? fRawData->GetParentMz(scan_num) : 0;
 
+		if(map==NULL && !chromatogramMapFileName.empty()) {
+			cout << "Extracting chromatogram bitmap to file " << chromatogramMapFileName << "." << endl;
+			map = new ChromatogramMap(chromatogramMzBins, lowMass, highMass);
+		}
 		if(msLevel==1) {
 			deadTimeSeconds = cycleTimeSeconds-elapsedTimeSeconds;
 			parentScan=0;
-			if(map==NULL && !chromatogramMapFileName.empty()) {
-				cout << "Extracting chromatogram bitmap to file " << chromatogramMapFileName << "." << endl;
-				map = new ChromatogramMap(chromatogramMzBins, lowMass, highMass);
-			}
 			if(map!=NULL) {
 				fRawData->GetRawData(&mzs, &intensities, scan_num);
 				map->addSpectrum(&mzs, &intensities);
