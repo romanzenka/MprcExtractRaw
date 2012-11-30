@@ -225,7 +225,7 @@ namespace Engine
 
 			int i = 0;
 
-			while (level >= msN_level)
+			while (level >= msN_level && scan_num - i >= 1)
 			{
 				level = GetMSLevel(scan_num - i);
 				i++;
