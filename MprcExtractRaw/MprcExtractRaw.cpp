@@ -81,6 +81,9 @@ const std::string PolymerSegment = "Polymer Segment Size";
 const std::string PolymerOffset = "Polymer Offset";
 const std::string PolymerScore = "Polymer Score";
 const std::string PolymerPValue = "Polymer p-value";
+const std::string PolymerForMassOffset = "Polymer (%d) Offset";
+const std::string PolymerForMassScore = "Polymer (%d) Score";
+const std::string PolymerForMassPValue = "Polymer (%d) p-value";
 const std::string BasePeakMz = "Base Peak m/z";
 const std::string BasePeakIntensity = "Base Peak Intensity";
 const std::string SecondPeakMz = "Second Peak m/z";
@@ -119,6 +122,9 @@ const std::string comment = "Comment";
 // RetentionTime from spectra
 const std::string Mz = "Mz";
 const std::string Intensity = "Intensity";
+
+// List of extra polymer masses to investigate
+const int polymerMasses[1] = { 162 };
 
 // Check Sqlite Error
 void cse(int rc) {
@@ -353,39 +359,45 @@ int addMsScans(sqlite3 *db, const char *inputRawFileName, const char * outputFil
 	return 0;
 }
 
-void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
-	double *segment, double *offset, double *score, double *pValue) {
+void getRawData(Engine::Readers::FinniganRawData *fRawData, int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
+	double *mz, int *charge) {
 		fRawData->GetRawData(mzs, intensities, scan_num);
-		double mz = fRawData->GetMonoMZFromHeader(scan_num);
-		int charge = fRawData->GetMonoChargeFromHeader(scan_num);
+		*mz = fRawData->GetMonoMZFromHeader(scan_num);
+		*charge = fRawData->GetMonoChargeFromHeader(scan_num);	
+}
+
+void getPolymerScore(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
+	double mz, int charge,
+	int minSegmentSize, int maxSegmentSize,
+	double *segment, double *offset, double *score, double *pValue) {
 		PolymerDetection::FindPolymers(
 			mz, charge, mzs, intensities, 
-			MIN_SEGMENT_SIZE, MAX_SEGMENT_SIZE,
+			minSegmentSize, maxSegmentSize,
 			*offset, *segment, *score, *pValue);
 }
 
 void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
 	double *basePeakMz, double *basePeakIntensity, double *secondPeakMz, double *secondPeakIntensity, double minDistanceSecondFromBaseDa) { 
-	*basePeakMz = 0.0;
-	*basePeakIntensity = 0.0;		
-	std::vector<double>::const_iterator mzsIter = mzs->cbegin();
-	std::vector<double>::const_iterator intIter = intensities->cbegin();
-	for (; mzsIter!=mzs->cend(); mzsIter++, intIter++) {
-		if(*intIter > *basePeakIntensity) {
-			*basePeakIntensity = *intIter;
-			*basePeakMz = *mzsIter;
+		*basePeakMz = 0.0;
+		*basePeakIntensity = 0.0;		
+		std::vector<double>::const_iterator mzsIter = mzs->cbegin();
+		std::vector<double>::const_iterator intIter = intensities->cbegin();
+		for (; mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+			if(*intIter > *basePeakIntensity) {
+				*basePeakIntensity = *intIter;
+				*basePeakMz = *mzsIter;
+			}
 		}
-	}
-	*secondPeakMz = 0.0;
-	*secondPeakIntensity = 0.0;
-	mzsIter = mzs->cbegin();
-	intIter = intensities->cbegin();
-	for (;mzsIter!=mzs->cend(); mzsIter++, intIter++) {
-		if(*intIter > *secondPeakIntensity && fabs(*mzsIter-*basePeakMz)>minDistanceSecondFromBaseDa) {
-			*secondPeakIntensity = *intIter;
-			*secondPeakMz = *mzsIter;
+		*secondPeakMz = 0.0;
+		*secondPeakIntensity = 0.0;
+		mzsIter = mzs->cbegin();
+		intIter = intensities->cbegin();
+		for (;mzsIter!=mzs->cend(); mzsIter++, intIter++) {
+			if(*intIter > *secondPeakIntensity && fabs(*mzsIter-*basePeakMz)>minDistanceSecondFromBaseDa) {
+				*secondPeakIntensity = *intIter;
+				*secondPeakMz = *mzsIter;
+			}
 		}
-	}
 }
 
 
@@ -465,8 +477,20 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			<< PolymerSegment << '\t'
 			<< PolymerOffset << '\t'
 			<< PolymerScore << '\t'
-			<< PolymerPValue << '\t'
+			<< PolymerPValue << '\t';
 
+		for(int polymerId = 0; polymerId < sizeof(polymerMasses)/sizeof(polymerMasses[0]); polymerId++) {
+			int mass = polymerMasses[polymerId];
+			char buffer[255];
+			sprintf(buffer, PolymerForMassOffset.c_str(), mass);
+			spectraOutputStream << buffer << '\t';
+			sprintf(buffer, PolymerForMassScore.c_str(), mass);
+			spectraOutputStream << buffer << '\t';
+			sprintf(buffer, PolymerForMassPValue.c_str(), mass);
+			spectraOutputStream << buffer << '\t';
+		}
+
+		spectraOutputStream
 			<< BasePeakMz  << '\t'
 			<< BasePeakIntensity  << '\t'
 			<< SecondPeakMz  << '\t'
@@ -552,6 +576,10 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			cout << "Extracting chromatogram bitmap to file " << chromatogramMapFileName << "." << endl;
 			map = new ChromatogramMap(chromatogramMzBins, lowMass, highMass);
 		}
+		bool calculatePolymers = false;
+		double mz;
+		int charge;
+
 		if(msLevel==1) {
 			deadTimeSeconds = cycleTimeSeconds-elapsedTimeSeconds;
 			parentScan=0;
@@ -563,7 +591,10 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			if(!spectraFileName.empty()) {
 				deadTimeSeconds = timeToNextScanSeconds - elapsedTimeSeconds;
 				parentScan = fRawData->GetParentScan(scan_num);
-				getPolymerScore(fRawData, scan_num, &mzs, &intensities, 
+				getRawData(fRawData, scan_num, &mzs, &intensities, &mz, &charge);
+				calculatePolymers = true;
+				getPolymerScore(scan_num, &mzs, &intensities, mz, charge,
+					MIN_SEGMENT_SIZE, MAX_SEGMENT_SIZE,
 					&polymerSegment, &polymerOffset, &polymerScore, &polymerPValue);
 				getBasePeak(scan_num, &mzs, &intensities, 
 					&basePeakMz, &basePeakIntensity, &secondPeakMz, &secondPeakIntensity,
@@ -621,18 +652,44 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 				<< dissociationType;
 
 			// Polymers
+			// First do the global output across the entire range
 			spectraOutputStream << '\t'
 				<< polymerSegment << '\t'
 				<< polymerOffset << '\t'
 				<< polymerScore << '\t';
 			if(firstSpectrum && (polymerPValue == (int)polymerPValue)) {
-				spectraOutputStream << polymerPValue << ".0";
+				spectraOutputStream << polymerPValue << ".0" << '\t';
 			} else {
-				spectraOutputStream << polymerPValue;
+				spectraOutputStream << polymerPValue << '\t';
+			}
+
+			// Now output the specific polymers
+			// We calculate them on the fly so we do not have to store the numbers in extra data structures
+			for(int polymerId = 0; polymerId < sizeof(polymerMasses)/sizeof(polymerMasses[0]); polymerId++) {
+				double polymerForMassOffset=-1.0;
+				double polymerForMassScore=0.0;
+				double polymerForMassPValue=1.0;
+
+				if(calculatePolymers) {
+					int segment = polymerMasses[polymerId];
+					double polymerForMassSegment=-1.0;
+
+					getPolymerScore(scan_num, &mzs, &intensities, mz, charge,
+						segment, segment,
+						&polymerForMassSegment, &polymerForMassOffset, &polymerForMassScore, &polymerForMassPValue);
+				}
+				spectraOutputStream 
+					<< polymerForMassOffset << '\t' 
+					<< polymerForMassScore << '\t';
+				if(firstSpectrum && (polymerForMassPValue == (int)polymerForMassPValue)) {
+					spectraOutputStream << polymerForMassPValue << ".0" << '\t';
+				} else {
+					spectraOutputStream << polymerForMassPValue << '\t';
+				}
 			}
 
 			// Base peak and second most intense
-			spectraOutputStream << '\t'
+			spectraOutputStream 
 				<< basePeakMz << (firstSpectrum && basePeakMz==0.0 ? ".0" : "") << '\t'
 				<< basePeakIntensity << (firstSpectrum && basePeakIntensity==0.0 ? ".0" : "") <<'\t'
 				<< secondPeakMz << (firstSpectrum && secondPeakMz==0.0 ? ".0" : "") <<'\t'
