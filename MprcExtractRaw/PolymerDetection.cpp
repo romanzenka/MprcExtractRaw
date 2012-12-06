@@ -6,7 +6,10 @@ const double PolymerDetection::PROTON_MASS = 1.00727646677;
 const double PolymerDetection::BIN_SIZE = 100.0;
 const double PolymerDetection::MIN_INTENSITY = 5.0;
 
-void PolymerDetection::FindPolymers(double MgfMz, int MgfZ, const std::vector<double> *inMzs, const std::vector<double> *inIntensities, double &maxOffset, double &maxSegment, double &maxScore, double &maxpValue)
+void PolymerDetection::FindPolymers(double MgfMz, int MgfZ, 
+	const std::vector<double> *inMzs, const std::vector<double> *inIntensities, 
+	int minSegmentSize, int maxSegmentSize, 
+	double &maxOffset, double &maxSegment, double &maxScore, double &maxpValue)
 {
 		// Go through all possible theoretical polymer models, score them, output the scores as a table
 		// A polymer model is characterized by segment_size and offset. The polymer peaks are then at
@@ -31,7 +34,7 @@ void PolymerDetection::FindPolymers(double MgfMz, int MgfZ, const std::vector<do
 
 		double mzSpan = inMzs->at(inMzs->size()-1) - inMzs->at(0);
 
-		for (int segment_size = MIN_SEGMENT_SIZE; segment_size <= MAX_SEGMENT_SIZE; segment_size++)
+		for (int segment_size = minSegmentSize; segment_size <= maxSegmentSize; segment_size++)
 		{
 			// How many possible hits can we get
 			int numSegments = (int)((mzSpan / segment_size) + 1);

@@ -7,8 +7,6 @@
 class PolymerDetection
 {
 private:
-	static const int MIN_SEGMENT_SIZE = 30;
-	static const int MAX_SEGMENT_SIZE = 100;
 	static const double FRAGMENT_TOLERANCE; // How far can the peak be from the theoretical mass (Da)
 	static const double PROTON_MASS;
 	
@@ -29,7 +27,15 @@ public:
 		return Mz * Z - PROTON_MASS * Z;
 	}
 
-	static void FindPolymers(double MgfMz, int MgfZ, const std::vector<double> *inMzs, const std::vector<double> *inIntensities, double &maxOffset, double &maxSegment, double &maxScore, double &maxpValue);	
+	static void FindPolymers(
+		// The M/Z and Z values from the spectrum
+		double MgfMz, int MgfZ, 
+		// m/z - intensity pairs describing the spectrum
+		const std::vector<double> *inMzs, const std::vector<double> *inIntensities, 
+		// What segment sizes should we find the best match for
+		int minSegmentSize, int maxSegmentSize, 
+		// Output values - what offest+segment do we reach the maxScore at, with what p-value
+		double &maxOffset, double &maxSegment, double &maxScore, double &maxpValue);	
 
 	// Retains only peaksPerInterval peaks per each intervalSize. The peak intensities
 	// are replaced with peak scores (peak with intensity #1 has highest score)

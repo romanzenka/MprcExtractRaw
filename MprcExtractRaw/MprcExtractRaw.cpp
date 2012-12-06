@@ -22,6 +22,10 @@
 #define SPECTRA_VERSION "0.1"
 #define PEAKS_VERSION "0.1"
 
+// Polymer detection
+const int MIN_SEGMENT_SIZE = 30;
+const int MAX_SEGMENT_SIZE = 100;
+
 // Command line options
 const std::string mprc = "--mprc";
 const std::string data = "--data";
@@ -354,7 +358,10 @@ void getPolymerScore(Engine::Readers::FinniganRawData *fRawData, int scan_num, s
 		fRawData->GetRawData(mzs, intensities, scan_num);
 		double mz = fRawData->GetMonoMZFromHeader(scan_num);
 		int charge = fRawData->GetMonoChargeFromHeader(scan_num);
-		PolymerDetection::FindPolymers(mz, charge, mzs, intensities, *offset, *segment, *score, *pValue);
+		PolymerDetection::FindPolymers(
+			mz, charge, mzs, intensities, 
+			MIN_SEGMENT_SIZE, MAX_SEGMENT_SIZE,
+			*offset, *segment, *score, *pValue);
 }
 
 void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
