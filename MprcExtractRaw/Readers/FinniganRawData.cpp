@@ -869,9 +869,9 @@ namespace Engine
 				std::string sLabel = data[i].key;
 				std::string sData = data[i].value;
 
-				if(sLabel=="API SOURCE") {
+				if(sLabel=="API SOURCE" || sLabel=="======  Ion Source:  ======:") {
 					section = 1;
-				} else if(sLabel=="VACUUM") {
+				} else if(sLabel=="VACUUM" || sLabel=="====== Vacuum: ======:") {
 					section = 2;
 				} else if(sLabel=="FT VACUUM") {
 					section = 3;
@@ -905,7 +905,7 @@ namespace Engine
 
 			switch(section) {
 			case 1: // API SOURCE
-				if(sLabel=="Source Current (uA):" || sLabel=="Spray Current (uA):") {
+				if(sLabel=="Source Current (uA):" || sLabel=="Spray Current (µA)") {
 					*sourceCurrent = atof(sData.c_str());
 				}						
 				break;
