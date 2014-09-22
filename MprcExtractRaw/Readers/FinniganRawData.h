@@ -44,6 +44,8 @@ using namespace stdext ;
 namespace Engine {
  namespace Readers
 {
+	class FinniganChannel;
+
 	class  FinniganRawData : public RawData
 	{
 		private : 
@@ -66,7 +68,6 @@ namespace Engine {
 			int mint_num_points_in_scan ; 
 			int *marr_data_block ; 
 			float *marr_temp_data_block ; 
-			
 						
 			XRawfile::IXRawfile2Ptr m_xraw2_class ;
 			
@@ -159,6 +160,7 @@ namespace Engine {
 			void GetInstrumentMethod(std::string *instrumentMethod);
 			void GetSampleInformation(std::string *sampleInformation);
 			void GetErrorLog(std::string *errorLog);
+			void GetUvData(std::string *uvData);
 
 			int GetParentScan(int scan_num);
 			bool IsMSScan(int scan_num);					

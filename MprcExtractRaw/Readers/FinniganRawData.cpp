@@ -98,11 +98,10 @@ namespace Engine
 
 			// Get the number of spectra
 			res = m_xraw2_class->SetCurrentController(0,1) ; 
+		
 			long nRet = m_xraw2_class->GetNumSpectra (&mlong_num_spectra );
 			nRet = m_xraw2_class->GetFirstSpectrumNumber (&mlong_spectra_num_first) ;
-			nRet = m_xraw2_class->GetLastSpectrumNumber (&mlong_spectra_num_last) ;
-			
-			
+			nRet = m_xraw2_class->GetLastSpectrumNumber (&mlong_spectra_num_last) ;						
 			
 			if( nRet )
 			{
@@ -144,8 +143,12 @@ namespace Engine
 
 			long scanN = scan_num;
 
+			long nControllers;
+			long nRet = m_xraw2_class->GetNumberOfControllers(&nControllers);
+
+
 			HRESULT res = m_xraw2_class->SetCurrentController(0,1) ;
-			long nRet = m_xraw2_class->GetMassListFromScanNum (&scanN, 
+			nRet = m_xraw2_class->GetMassListFromScanNum (&scanN, 
 						bstr_type,	// no filter
 						0,			// no cutoff
 						0,			// no cutoff
@@ -742,7 +745,7 @@ namespace Engine
 			for( long i=0; i<count; i++ )
 			{
 				result[i].key = _bstr_t(pbstrLabels[i]);
-				result[i].value = _bstr_t(pbstrValues[i]);									
+				result[i].value = _bstr_t(pbstrValues[i]);
 			}
 
 			// Delete the SafeArray
@@ -1179,6 +1182,97 @@ namespace Engine
 			}
 		}
 
+		void FinniganRawData::GetUvData(std::string *uvData) {
+			// Determine if we have UV controllers
+			const long UV_CONTROLLER = 4;
+			long num_uv_controllers = 0;
+			HRESULT res;
+			res = m_xraw2_class->GetNumberOfControllersOfType(UV_CONTROLLER, &num_uv_controllers);
+
+			uvData->clear();
+
+			if (num_uv_controllers == 0) {
+				// No controllers, return empty string				
+				return;
+			}
+						
+			res = m_xraw2_class->SetCurrentController(UV_CONTROLLER, 1);
+			if (res != 0) {
+				throw "Unable to set current controller to get channel description";
+			}
+
+			long numberOfSpectra, firstSpectrum, lastSpectrum; // For UV device - number of readings per channel
+			res = m_xraw2_class->GetNumSpectra(&numberOfSpectra);
+			if (res != 0) {
+				throw "Unable to determine number of spectra (readings per UV channel)";
+			}
+			res = m_xraw2_class->GetFirstSpectrumNumber(&firstSpectrum);
+			res = m_xraw2_class->GetLastSpectrumNumber(&lastSpectrum);
+
+			// List channels
+			long instNumChannelLabels;
+			res = m_xraw2_class->GetInstNumChannelLabels(&instNumChannelLabels);
+			if (res != 0) {
+				throw "Unable to get num channel labels";
+			}
+			for (long i = 0; i < instNumChannelLabels; i++) {
+				BSTR bstrLabel = NULL;
+				res = m_xraw2_class->GetInstChannelLabel(i, &bstrLabel);
+				if (res != 0) {
+					throw "Unable to get channel label";
+				}
+				std::string label = _bstr_t(bstrLabel);
+				SysFreeString(bstrLabel);
+			}
+
+			for (long scan_num = firstSpectrum; scan_num <= lastSpectrum; scan_num++) {
+				double statusLogRT;
+
+				VARIANT varLabels;
+				VariantInit(&varLabels);
+				VARIANT varValues;
+				VariantInit(&varValues);
+				long nArraySize = 0;
+				long nRet = m_xraw2_class->GetStatusLogForScanNum(scan_num,
+					&statusLogRT,
+					&varLabels,
+					&varValues,
+					&nArraySize);
+				if (nRet != 0) {
+					throw "Could not get status log";
+				}
+
+				KeyValuePair *data = getKeyValuePairs(&varLabels, &varValues, nArraySize);
+
+				if (scan_num == firstSpectrum) {
+					uvData->append("id\trt\t");
+					for (long i = 0; i < nArraySize; i++)
+					{
+						std::string sLabel = data[i].key;
+						uvData->append(sLabel.c_str());
+						uvData->append("\t");
+					}
+					uvData->append("\n");
+				}
+
+				char buf[100];
+				sprintf(buf, "%ld\t%lf\t", scan_num, statusLogRT);
+				uvData->append(buf);
+				for (long i = 0; i < nArraySize; i++)
+				{
+					std::string sData = data[i].value;
+					uvData->append(sData.c_str());
+					uvData->append("\t");
+				}
+				uvData->append("\n");
+
+				delete[] data;
+			}
+
+			// Reset controller, just in case
+			res = m_xraw2_class->SetCurrentController(0, 1);
+		}
+
 		void FinniganRawData::CountSpectraByMsLevel(long *ms1, long *ms2, long *ms3plus) {
 			int first=GetFirstScanNum();
 			int last=GetLastScanNum();
@@ -1214,4 +1308,5 @@ namespace Engine
 		}
 	}
 }
+
 #endif

@@ -45,6 +45,7 @@ const std::string tuneMethodFile = "--tune";
 const std::string instrumentMethodFile = "--instrument";
 const std::string sampleInformationFile = "--sample";
 const std::string errorLogFile = "--errorlog";
+const std::string uvDataFile = "--uv"; // From UV controller (pressure info)
 
 // MZ range params (rawFile is shared with MPRC params)
 const std::string minMz = "--min";
@@ -763,8 +764,19 @@ void extractErrorLogData(Engine::Readers::FinniganRawData *fRawData, std::string
 	dumpToFile(fileName, data);	
 }
 
+void extractUvData(Engine::Readers::FinniganRawData *fRawData, std::string fileName) {
+	std::cout << "Extracting UV data to file " << fileName << "." << std::endl;
+	std::string data;
+	fRawData->GetUvData(&data);
+	if (data.size() > 0) {
+		dumpToFile(fileName, data);
+	} else {
+		std::cout << "UV data not present. File " << fileName << " will not be created." << std::endl;
+	}
+}
+
 int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, std::string spectraFileName, std::string chromatogramMapFileName,
-	std::string tuneMethodFileName, std::string instrumentMethodFileName, std::string sampleInfoFileName, std::string errorLogFileName) {
+	std::string tuneMethodFileName, std::string instrumentMethodFileName, std::string sampleInfoFileName, std::string errorLogFileName, std::string uvDataFileName) {
 		using namespace std;
 
 		clock_t startClock = clock();
@@ -799,6 +811,10 @@ int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, s
 
 			if(!errorLogFileName.empty()) {
 				extractErrorLogData(fRawData, errorLogFileName);
+			}
+
+			if (!uvDataFileName.empty()) {
+				extractUvData(fRawData, uvDataFileName);
 			}
 
 			extractPerSpectrumData(fRawData, spectraFileName, chromatogramMapFileName);
@@ -1178,6 +1194,7 @@ int main(int argc, char* argv[])
 		std::string instrumentMethodFileName = getOption(paramVector, instrumentMethodFile);
 		std::string sampleInfoFileName = getOption(paramVector, sampleInformationFile);
 		std::string errorLogFileName = getOption(paramVector, errorLogFile);
+		std::string uvDataFileName = getOption(paramVector, uvDataFile);
 
 		return extractRawDataFile(
 			inputRawFileName, 
@@ -1187,7 +1204,8 @@ int main(int argc, char* argv[])
 			tuneMethodFileName,
 			instrumentMethodFileName,
 			sampleInfoFileName,
-			errorLogFileName);
+			errorLogFileName,
+			uvDataFileName);
 	} else if (hasOption(paramVector, mzRange)) {
 		std::string inputRawFileName = getOption(paramVector, rawFile);
 		if (inputRawFileName.empty()) {

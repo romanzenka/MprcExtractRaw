@@ -13,6 +13,7 @@
 #include "PeakIndex.h"
 #include <vector>
 #include <map>
+#include <functional>
 
 namespace Engine
 {
