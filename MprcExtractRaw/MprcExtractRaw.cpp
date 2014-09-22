@@ -768,11 +768,10 @@ void extractUvData(Engine::Readers::FinniganRawData *fRawData, std::string fileN
 	std::cout << "Extracting UV data to file " << fileName << "." << std::endl;
 	std::string data;
 	fRawData->GetUvData(&data);
-	if (data.size() > 0) {
-		dumpToFile(fileName, data);
-	} else {
-		std::cout << "UV data not present. File " << fileName << " will not be created." << std::endl;
+	if (data.size() == 0) {
+		std::cout << "UV data not present. Empty " << fileName << " will be created." << std::endl;
 	}
+	dumpToFile(fileName, data);
 }
 
 int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, std::string spectraFileName, std::string chromatogramMapFileName,
@@ -1086,6 +1085,8 @@ void printUsage() {
 	std::cerr << "\tSample information (copied verbatim as seen in XCalibur)" << std::endl;
 	std::cerr << "  " << errorLogFile << " <error log file>" << std::endl;
 	std::cerr << "\tError log. If there was no error, this file should be empty." << std::endl;
+	std::cerr << "  " << uvDataFile << " <UV data file>" << std::endl;
+	std::cerr << "\tUV data log. If the UV controller data is missing, empty file is produced." << std::endl;
 
 	std::cerr << std::endl;
 	std::cerr << "Spectra file columns:" << std::endl;
