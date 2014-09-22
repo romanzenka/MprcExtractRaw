@@ -1245,24 +1245,24 @@ namespace Engine
 				KeyValuePair *data = getKeyValuePairs(&varLabels, &varValues, nArraySize);
 
 				if (scan_num == firstSpectrum) {
-					uvData->append("id\trt\t");
+					uvData->append("id\trt");
 					for (long i = 0; i < nArraySize; i++)
 					{
-						std::string sLabel = data[i].key;
-						uvData->append(sLabel.c_str());
 						uvData->append("\t");
+						std::string sLabel = data[i].key;
+						uvData->append(sLabel.c_str());						
 					}
 					uvData->append("\n");
 				}
 
 				char buf[100];
-				sprintf(buf, "%ld\t%lf\t", scan_num, statusLogRT);
+				sprintf(buf, "%ld\t%lf", scan_num, statusLogRT);
 				uvData->append(buf);
 				for (long i = 0; i < nArraySize; i++)
 				{
 					std::string sData = data[i].value;
-					uvData->append(sData.c_str());
 					uvData->append("\t");
+					uvData->append(sData.c_str());
 				}
 				uvData->append("\n");
 
