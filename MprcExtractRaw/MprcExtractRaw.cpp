@@ -16,7 +16,7 @@
 #include "ChromatogramMap.h"
 
 // Version of MprcExtractRaw
-#define VERSION "0.3"
+#define VERSION "0.4"
 
 // Version of the ms_scans table
 #define SPECTRA_VERSION "0.1"
@@ -378,23 +378,16 @@ void getPolymerScore(int scan_num, std::vector<double> *mzs, std::vector<double>
 }
 
 void getBasePeak(int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
-	double *basePeakMz, double *basePeakIntensity, double *secondPeakMz, double *secondPeakIntensity, double minDistanceSecondFromBaseDa) { 
-		*basePeakMz = 0.0;
-		*basePeakIntensity = 0.0;		
+	double basePeakMz, double basePeakIntensity, double *secondPeakMz, double *secondPeakIntensity, double minDistanceSecondFromBaseDa) { 
 		std::vector<double>::const_iterator mzsIter = mzs->cbegin();
 		std::vector<double>::const_iterator intIter = intensities->cbegin();
-		for (; mzsIter!=mzs->cend(); mzsIter++, intIter++) {
-			if(*intIter > *basePeakIntensity) {
-				*basePeakIntensity = *intIter;
-				*basePeakMz = *mzsIter;
-			}
-		}
+
 		*secondPeakMz = 0.0;
 		*secondPeakIntensity = 0.0;
 		mzsIter = mzs->cbegin();
 		intIter = intensities->cbegin();
 		for (;mzsIter!=mzs->cend(); mzsIter++, intIter++) {
-			if(*intIter > *secondPeakIntensity && fabs(*mzsIter-*basePeakMz)>minDistanceSecondFromBaseDa) {
+			if(*intIter > *secondPeakIntensity && fabs(*mzsIter-basePeakMz)>minDistanceSecondFromBaseDa) {
 				*secondPeakIntensity = *intIter;
 				*secondPeakMz = *mzsIter;
 			}
@@ -567,7 +560,8 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			&timeToNextScanSeconds, 
 			&lockMassFound, &lockMassShift,
 			&conI, &conA, &conB, &conC, &conD, &conE,
-			&sourceCurrent, &vacuumIonGauge, &vacuumConvectronGauge, &ftVacuumPenningGauge, &ftVacuumPiraniGauge1, &ionMultiplier1, &ionMultiplier2, &ftCeMeasureVoltage, &ftAnalyzerTemp);
+			&sourceCurrent, &vacuumIonGauge, &vacuumConvectronGauge, &ftVacuumPenningGauge, &ftVacuumPiraniGauge1, &ionMultiplier1, &ionMultiplier2, &ftCeMeasureVoltage, &ftAnalyzerTemp,
+			&basePeakMz, &basePeakIntensity);
 
 		msLevel = fRawData->GetMSLevel(scan_num);
 
@@ -598,7 +592,7 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 					MIN_SEGMENT_SIZE, MAX_SEGMENT_SIZE,
 					&polymerSegment, &polymerOffset, &polymerScore, &polymerPValue);
 				getBasePeak(scan_num, &mzs, &intensities, 
-					&basePeakMz, &basePeakIntensity, &secondPeakMz, &secondPeakIntensity,
+					basePeakMz, basePeakIntensity, &secondPeakMz, &secondPeakIntensity,
 					secondPeakMinDistanceFromBase);
 			}
 		}			

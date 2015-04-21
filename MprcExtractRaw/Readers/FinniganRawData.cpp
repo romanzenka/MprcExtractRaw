@@ -657,19 +657,19 @@ namespace Engine
 				double *ionMultiplier1,
 				double *ionMultiplier2,
 				double *ftCeMeasureVoltage,
-				double *ftAnalyzerTemp)
+				double *ftAnalyzerTemp,
+				double *basePeakMass,
+				double *basePeakIntensity)
 		{
 			using namespace std;
 
 			long numPackets ; // How many mass/intensity pairs
-			double basePeakMass ; // Mass of the base peak
-			double basePeakIntensity ; // Intensity of the base peak
 			long numChannels ; // Number of channels acquired for the scan
 			long uniformTime ; // Indicating whether the sampling time increment for the current controller is uniform (?)
 			double frequency ; // Sampling frequency for the current controller			
 
-			m_xraw2_class->GetScanHeaderInfoForScanNum(scan_num, &numPackets, retentionTime, lowMass, highMass, tic, &basePeakMass,
-				&basePeakIntensity, &numChannels, &uniformTime, &frequency) ;			
+			m_xraw2_class->GetScanHeaderInfoForScanNum(scan_num, &numPackets, retentionTime, lowMass, highMass, tic, basePeakMass,
+				basePeakIntensity, &numChannels, &uniformTime, &frequency) ;			
 
 			// Extract delta information by parsing subsequent scans
 			*timeToNextScanSeconds = 0;

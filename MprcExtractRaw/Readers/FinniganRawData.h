@@ -34,7 +34,7 @@
 //XRawfile2.dll
 
 #ifdef XCALIBUR_INSTALLED
-#import "..\bin\XRawfile2.dll" rename_namespace("XRawfile")
+#import "..\bin\XRawfile2_x64.dll" rename_namespace("XRawfile")
 
 #include <iostream>
 #include <hash_map>
@@ -128,7 +128,9 @@ namespace Engine {
 				double *ionMultiplier1,
 				double *ionMultiplier2,
 				double *ftCeMeasureVoltage,
-				double *ftAnalyzerTemp);						
+				double *ftAnalyzerTemp,
+				double *basePeakMass,
+				double *basePeakIntensity);						
 			void GetScanHeaderData(long scan_num, 
 				double *ionInjectionTimeMs, double *elapsedTimeSeconds, 
 				bool *lockMassFound, double *lockMassShift, 

@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MprcExtractRaw", "MprcExtractRaw\MprcExtractRaw.vcxproj", "{05D94DC2-E01E-4151-AEE2-18E55B545BF8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E9208F3B-73A2-4BCD-8517-309520FE9C39}"
@@ -8,13 +10,19 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Debug|Win32.Build.0 = Debug|Win32
+		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Debug|x64.ActiveCfg = Debug|x64
+		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Debug|x64.Build.0 = Debug|x64
 		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Release|Win32.ActiveCfg = Release|Win32
 		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Release|Win32.Build.0 = Release|Win32
+		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Release|x64.ActiveCfg = Release|x64
+		{05D94DC2-E01E-4151-AEE2-18E55B545BF8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
