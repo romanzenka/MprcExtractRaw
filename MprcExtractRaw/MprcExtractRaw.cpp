@@ -9,7 +9,6 @@
 #include <time.h>
 #include <math.h>
 #include <io.h>
-#include "SQLite/sqlite3.h"
 #include "OutputBuffer.h"
 #include "Readers/FinniganRawData.h"
 #include "PolymerDetection.h"
@@ -27,15 +26,12 @@ const int MIN_SEGMENT_SIZE = 30;
 const int MAX_SEGMENT_SIZE = 100;
 
 // Command line options
-const std::string mprc = "--mprc";
 const std::string data = "--data";
 const std::string mzRange = "--mzrange";
 const std::string paramsFile = "--params";
 
 // MPRC params
 const std::string rawFile = "--raw";
-const std::string outFile = "--out";
-const std::string ms2Switch = "--ms2";
 
 // Data params
 const std::string infoFile = "--info";
@@ -126,239 +122,6 @@ const std::string Intensity = "Intensity";
 
 // List of extra polymer masses to investigate
 const int polymerMasses[1] = { 162 };
-
-// Check Sqlite Error
-void cse(int rc) {
-	if( rc!=SQLITE_OK ){
-		fprintf(stderr, "SQL error\n");
-		throw 1;
-	}	
-}
-
-void exec(sqlite3 *db, const char * command) {
-	char *zErrMsg = 0;
-	int rc = sqlite3_exec(db, command, NULL, 0, &zErrMsg);
-	if( rc!=SQLITE_OK ){
-		fprintf(stderr, "SQL error: %s\n", zErrMsg);
-		sqlite3_free(zErrMsg);
-		exit(1);
-	}	
-}
-
-// Setup pragmas to improve performance
-void pragmas(sqlite3 *db) {
-	// Switch off synchronous mode (commands end even before data transfer is done)
-	exec(db, "PRAGMA synchronous=OFF;");
-
-	// Cache more data in memory. The value is number of 1K blocks, 2000 is default.
-	exec(db, "PRAGMA cache_size=200000;");
-
-	// Temp file is in memory
-	exec(db, "PRAGMA temp_store=MEMORY;");
-}
-
-// Create version table in the database
-void createVersionTable(sqlite3 *db) {
-	exec(db, "CREATE TABLE version (version TEXT);");
-	exec(db, "INSERT INTO version (version) values ('0.1');");
-}
-
-// Create the content and content_metadata tables 
-void createContentTables(sqlite3 *db) {
-	exec(db, "CREATE TABLE contents (id INTEGER PRIMARY KEY, table_name TEXT, table_version TEXT, generator TEXT, generator_version TEXT, date_created TEXT);");
-	exec(db, "CREATE TABLE contents_meta (id INTEGER PRIMARY KEY, contents_id INTEGER REFERENCES contents(id), meta_key TEXT, meta_value TEXT);");
-}
-
-// Create spectra table and its metadata
-void createSpectraTable(sqlite3 *db, const char *inputRawFileName) {
-	exec(db, "CREATE TABLE scans (scan INTEGER PRIMARY KEY, rt REAL, ms_level INTEGER, parent_scan INTEGER, parent_mass INTEGER);");
-
-	exec(db, "INSERT INTO contents (id, table_name, table_version, generator, generator_version, date_created) VALUES (1, 'scans', '" SPECTRA_VERSION "', 'MprcExtractRaw', '" VERSION "', date('now'));");
-	char *zSQL = sqlite3_mprintf("INSERT INTO contents_meta (id, contents_id, meta_key, meta_value) values (1, 1, 'raw', '%q');", inputRawFileName);
-	exec(db, zSQL);
-	sqlite3_free(zSQL);
-}
-
-// Create peaks table and its metadata
-void createPeaksTable(sqlite3 *db, const char *inputRawFileName, bool addMs2Peaks) {
-	exec(db, "CREATE TABLE peaks (scan INTEGER PRIMARY KEY, peak_count INTEGER, peaks BLOB);");
-	exec(db, "INSERT INTO contents (id, table_name, table_version, generator, generator_version, date_created) VALUES (2, 'peaks', '" PEAKS_VERSION "', 'MprcExtractRaw', '" VERSION "', date('now'));");
-	char *zSQL = sqlite3_mprintf("INSERT INTO contents_meta (contents_id, meta_key, meta_value) values (2, 'has_ms2_peaks', '%q');", addMs2Peaks ? "true" : "false");
-	exec(db, zSQL);
-	sqlite3_free(zSQL);
-}
-
-// Add spectra from the raw data file
-int addSpectra(sqlite3 *db, const char *inputRawFileName, const char * outputFileName, Engine::Readers::RawData * pRawData) {
-	createSpectraTable(db, inputRawFileName);
-
-	// Prepare statement
-	const char *insertStatement = "INSERT INTO scans (scan, rt, ms_level, parent_scan, parent_mass) VALUES (?1, ?2, ?3, ?4, ?5);";
-
-	sqlite3_stmt *pStatement=NULL;
-	int rc = sqlite3_prepare_v2(db, insertStatement, strlen(insertStatement), &pStatement, NULL);
-	if( rc!=SQLITE_OK ){
-		std::cerr<<"SQL error when preparing insert statement.\n";
-		exit(1);
-	}	
-
-	try {
-		int percentDone = 0;
-		int numScans = pRawData->GetNumScans();
-		std::cout << "\tTotal scans: " << numScans << "\n";
-
-		for(int i=pRawData->GetFirstScanNum(); i<=pRawData->GetLastScanNum(); i=pRawData->GetNextScanNum(i)) {
-			int scanNumber = i;
-			double retentionTime = pRawData->GetScanTime(scanNumber);
-			int msLevel = pRawData->GetMSLevel(i); // MS level 1 indicates a survey (FTMS) scan			
-			int parentScan = (msLevel>1) ? pRawData->GetParentScan(i) : 0;
-			double parentMass = (msLevel>1) ? pRawData->GetParentMz(i) : 0.0;
-
-			cse(sqlite3_bind_int(pStatement, 1, scanNumber));
-			cse(sqlite3_bind_double(pStatement, 2, retentionTime));
-			cse(sqlite3_bind_int(pStatement, 3, msLevel));
-			cse(sqlite3_bind_int(pStatement, 4, parentScan));
-			cse(sqlite3_bind_double(pStatement, 5, parentMass));
-
-			rc = sqlite3_step(pStatement);
-			if(rc!=SQLITE_DONE) {
-				throw 1;
-			}
-			cse(sqlite3_reset(pStatement));
-			int newPercent = 100 * i / numScans;
-			if(newPercent!=percentDone) {
-				percentDone=newPercent;
-				std::cout << "Adding scan " << i << " (" << percentDone << "%)\n";
-			}
-		}
-	} catch(...) {
-		std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-		return 1;
-	}
-	if(pStatement!=NULL) {
-		cse(sqlite3_finalize(pStatement));
-	}
-	return 0;
-}
-
-
-// Add scans from the raw data file
-// addMs2 enables/disables extraction of data from MS2 scans
-int addMsScans(sqlite3 *db, const char *inputRawFileName, const char * outputFileName, Engine::Readers::RawData * pRawData, bool addMs2Peaks) {
-	createPeaksTable(db, inputRawFileName, addMs2Peaks);
-
-	// Prepare statement
-	const char *insertStatement = "INSERT INTO peaks (scan, peak_count, peaks) VALUES (?1, ?2, ?3);";
-
-	sqlite3_stmt *pStatement=NULL;
-	int rc = sqlite3_prepare_v2(db, insertStatement, strlen(insertStatement), &pStatement, NULL);
-	if( rc!=SQLITE_OK ){
-		fprintf(stderr, "SQL error when preparing insert statement.\n");
-		exit(1);
-	}	
-
-	OutputBuffer buf;
-
-	try {
-		int percentDone = 0;
-		int numScans = pRawData->GetNumScans();
-
-		std::vector<double> mzs;
-		std::vector<double> intensities;
-
-		for(int i=pRawData->GetFirstScanNum(); i<=pRawData->GetLastScanNum(); i=pRawData->GetNextScanNum(i)) {
-			int msLevel = pRawData->GetMSLevel(i);
-			// MS level 1 indicates a survey (FTMS) scan
-			bool addThisScan = (msLevel==1) || (msLevel==2 && addMs2Peaks);
-			if(addThisScan) {			
-				pRawData->GetRawData(&mzs, &intensities, i);
-
-				int scanNumber = i;
-				int numPeaks = mzs.size();
-				int numPeaksStored = 0;
-
-				// About 20% speedup - allocating what we need in advance
-				buf.ensureBufferHasSpace(numPeaks*2*sizeof(TJavaFloat));
-
-				// OUTPUT: m/z, intensity float pairs
-				std::vector<double>::iterator mzIt = mzs.begin();
-				std::vector<double>::iterator intIt = intensities.begin();			
-				bool wasZero = false;
-				bool zeroStored = false;
-				TJavaFloat previousMass = 0.0;
-				while(mzIt!=mzs.end()) {
-					TJavaFloat newIntensity = (TJavaFloat)*intIt;
-					TJavaFloat newMass = (TJavaFloat)*mzIt;
-					bool isZero = newIntensity==(TJavaFloat)0.0;
-
-					// Skip long sequences of zeros. Retain only beginning and trailing zero for graph plotting
-					if(!wasZero) {
-						// Store current value
-						buf.addJavaFloat(newMass);
-						buf.addJavaFloat(newIntensity);
-						numPeaksStored++;
-						if(isZero) { // !wasZero, isZero
-							wasZero=true;
-							zeroStored=true;
-						}
-					} else { // wasZero 
-						if(!isZero) {
-							wasZero=false;
-							if(!zeroStored) {
-								// Store the previous zero
-								buf.addJavaFloat(previousMass);
-								buf.addJavaFloat((TJavaFloat)0.0);
-								numPeaksStored++;
-							}
-							// Store current value
-							buf.addJavaFloat(newMass);
-							buf.addJavaFloat(newIntensity);
-							numPeaksStored++;
-						} else { // wasZero && isZero							
-							// The current zero is not getting stored
-							zeroStored=false;
-							previousMass = newMass;	
-							// Keep going, do not store anything
-						}
-					}
-					mzIt++;
-					intIt++;
-				}
-
-				// Store the last zero (if it did not get stored) to terminate our graph neatly
-				if(!zeroStored) {
-					buf.addJavaFloat(previousMass);
-					buf.addJavaFloat((TJavaFloat)0.0);
-					numPeaksStored++;
-				}
-
-				cse(sqlite3_bind_int(pStatement, 1, i));
-				cse(sqlite3_bind_int(pStatement, 2, numPeaksStored));
-				cse(sqlite3_bind_blob(pStatement, 3, buf.get(), buf.usedSize(), SQLITE_TRANSIENT));
-
-				rc = sqlite3_step(pStatement);
-				if(rc!=SQLITE_DONE) {
-					throw 1;
-				}
-				cse(sqlite3_reset(pStatement));
-
-				buf.clear();
-			}		
-			int newPercent = 100 * i / numScans;
-			if(newPercent!=percentDone) {
-				percentDone=newPercent;
-				std::cout << "Adding peaks for scan " << i << " (" << percentDone << "%)\n";
-			}
-		}
-	} catch(...) {
-		std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-		return 1;
-	}
-	if(pStatement!=NULL) {
-		cse(sqlite3_finalize(pStatement));
-	}
-	return 0;
-}
 
 void getRawData(Engine::Readers::FinniganRawData *fRawData, int scan_num, std::vector<double> *mzs, std::vector<double> *intensities, 
 	double *mz, int *charge) {
@@ -891,65 +654,6 @@ int extractRange(const char *inputRawFileName, const char *peaksFileName, double
 
 }
 
-int generateMprcData (const char * inputRawFileName, const char * outputFileName, bool addMs2Peaks) {
-	clock_t startClock = clock();
-
-	Engine::Readers::RawData * pRawData = NULL;
-
-	sqlite3 *db = NULL;
-	char *zErrMsg = 0;
-	int rc;
-
-	try {
-		pRawData = Engine::Readers::ReaderFactory::GetRawData(Engine::Readers::FileType::FINNIGAN, const_cast<char*>(inputRawFileName));		
-	} catch(...) {
-		std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-		return 1;
-	}
-
-	int errorCode=0;
-	try {
-		// Open SQLite3 database
-		rc = sqlite3_open(outputFileName, &db);
-		if( rc ){
-			fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-			sqlite3_close(db);
-			exit(1);
-		}
-
-		pragmas(db);
-
-		exec(db, "BEGIN;");
-		createVersionTable(db);
-		createContentTables(db);	
-		if(errorCode==0) {
-			errorCode = addSpectra(db, inputRawFileName, outputFileName, pRawData);
-		}
-		if(errorCode==0) {
-			errorCode |= addMsScans(db, inputRawFileName, outputFileName, pRawData, addMs2Peaks);
-		}
-		exec(db, "COMMIT;");
-
-	} catch(...) {
-		std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-		errorCode=1;
-	}
-	if(db!=NULL) {
-		sqlite3_close(db);
-	}
-
-	if(pRawData) {
-		pRawData->Close();
-		delete pRawData;
-	}
-
-	clock_t endClock = clock();
-
-	std::cout << "Took " << ((double)endClock-startClock)/CLOCKS_PER_SEC << " seconds \n";
-
-	return errorCode;
-}
-
 std::string getOption(std::vector<std::string> & commandLineParams, std::string option) {
 
 	using namespace std;
@@ -1050,16 +754,9 @@ void printUsage() {
 	std::cerr << "Usage: MprcExtractRaw <option> <parameters>\n";
 	std::cerr << std::endl;
 	std::cerr << "Options:" << std::endl;
-	std::cerr << "  " << mprc << "\textract .mprc file" << std::endl;
 	std::cerr << "  " << data << "\textract .tsv files for Swift QA" << std::endl;
 	std::cerr << "  " << mzRange << "\textract .tsv files with peak data from given range" << std::endl;
 	std::cerr << "  " << paramsFile << "\tobtain parameters from specified file"<< std::endl;
-	std::cerr << std::endl;
-
-	std::cerr << mprc << " parameters:" << std::endl;
-	std::cerr << "  " << rawFile << " <thermo finnigan RAW file path> " << std::endl;
-	std::cerr << "  " << outFile << " <output database (must not exist)>" << std::endl;
-	std::cerr << "  " << ms2Switch << "  optional: enables extraction of peaks from ms2 spectra" << std::endl;
 	std::cerr << std::endl;
 
 	std::cerr << data << " parameters:" << std::endl;
@@ -1137,12 +834,10 @@ void printOptionError(std::string option) {
 
 // MprcExtractRaw uses DeconMsn's libraries to extract mass/intensity pairs for survey spectra
 // from Thermo Finnigan .RAW files (for now, we can support other formats like ABI as well).
-// The program dumps all the extracted data into SqLite database in Mprc Data Format.
-//
-// See http://proteomics.mayo.edu/wiki/trac.cgi/wiki/MprcDataFormat for more information about the output format.
+// The program dumps all the extracted data into a bunch of text files.
 int main(int argc, char* argv[])
 {
-	if(argc < 3 || (argc >= 3 && (strcmp(argv[1], data.c_str())!=0 && strcmp(argv[1], mprc.c_str())!=0 && strcmp(argv[1], paramsFile.c_str())!=0))) {
+	if(argc < 3 || (argc >= 3 && (strcmp(argv[1], data.c_str())!=0 && strcmp(argv[1], paramsFile.c_str())!=0))) {
 		printUsage();
 		return 1;
 	}
@@ -1158,24 +853,7 @@ int main(int argc, char* argv[])
 		paramVector = getParamsFromFile(argv[2]);
 	}
 
-	if (hasOption(paramVector, mprc)) {
-		std::string inputRawFileName = getOption(paramVector, rawFile);
-		if (inputRawFileName.empty()) {
-			printOptionError(rawFile);
-			return 1;
-		}
-
-		std::string outputFileName = getOption(paramVector, outFile);
-		if (outputFileName.empty()) {
-			printOptionError(outFile);
-			return 1;
-		}
-
-		bool addMs2Peaks = hasOption(paramVector, ms2Switch);
-
-		return generateMprcData (inputRawFileName.c_str(), outputFileName.c_str(), addMs2Peaks);
-
-	} else if (hasOption(paramVector, data)) {
+	if (hasOption(paramVector, data)) {
 		std::string inputRawFileName = getOption(paramVector, rawFile);
 		if (inputRawFileName.empty()) {
 			printOptionError(rawFile);
@@ -1230,63 +908,5 @@ int main(int argc, char* argv[])
 
 		return extractRange(inputRawFileName.c_str(), peaksFileName.c_str(), minMzValue, maxMzValue);
 	}
-	/*
-	clock_t startClock = clock();
-
-	Engine::Readers::RawData * pRawData = NULL;
-
-	sqlite3 *db = NULL;
-	char *zErrMsg = 0;
-	int rc;
-
-	try {
-	pRawData = Engine::Readers::ReaderFactory::GetRawData(Engine::Readers::FileType::FINNIGAN, inputRawFileName);		
-	} catch(...) {
-	std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-	return 1;
-	}
-
-	int errorCode=0;
-	try {
-	// Open SQLite3 database
-	rc = sqlite3_open(outputFileName, &db);
-	if( rc ){
-	fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-	sqlite3_close(db);
-	exit(1);
-	}
-
-	pragmas(db);
-
-	exec(db, "BEGIN;");
-	createVersionTable(db);
-	createContentTables(db);	
-	if(errorCode==0) {
-	errorCode = addSpectra(db, inputRawFileName, outputFileName, pRawData);
-	}
-	if(errorCode==0) {
-	errorCode |= addMsScans(db, inputRawFileName, outputFileName, pRawData, addMs2Peaks);
-	}
-	exec(db, "COMMIT;");
-
-	} catch(...) {
-	std::cerr << "ERROR: problem extracting raw data from " << inputRawFileName << " into " << outputFileName << "\n";
-	errorCode=1;
-	}
-	if(db!=NULL) {
-	sqlite3_close(db);
-	}
-
-	if(pRawData) {
-	pRawData->Close();
-	delete pRawData;
-	}
-
-	clock_t endClock = clock();
-
-	std::cout << "Took " << ((double)endClock-startClock)/CLOCKS_PER_SEC << " seconds \n";
-
-	return errorCode;
-	*/
 }
 

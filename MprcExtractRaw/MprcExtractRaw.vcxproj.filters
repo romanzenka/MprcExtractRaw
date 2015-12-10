@@ -161,9 +161,6 @@
     <ClCompile Include="PeakProcessor\PeakProcessor.cpp">
       <Filter>PeakProcessor\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SQLite\sqlite3.c">
-      <Filter>SQLite</Filter>
-    </ClCompile>
     <ClCompile Include="OutputBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -285,9 +282,6 @@
     </ClInclude>
     <ClInclude Include="PeakProcessor\PeakStatistician.h">
       <Filter>PeakProcessor\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SQLite\sqlite3.h">
-      <Filter>SQLite</Filter>
     </ClInclude>
     <ClInclude Include="SQLite\sqlite3ext.h">
       <Filter>SQLite</Filter>

@@ -216,7 +216,6 @@
     <ClCompile Include="PeakProcessor\PeakData.cpp" />
     <ClCompile Include="PeakProcessor\PeakFit.cpp" />
     <ClCompile Include="PeakProcessor\PeakProcessor.cpp" />
-    <ClCompile Include="SQLite\sqlite3.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChromatogramMap.h" />
@@ -257,7 +256,6 @@
     <ClInclude Include="PeakProcessor\PeakIndex.h" />
     <ClInclude Include="PeakProcessor\PeakProcessor.h" />
     <ClInclude Include="PeakProcessor\PeakStatistician.h" />
-    <ClInclude Include="SQLite\sqlite3.h" />
     <ClInclude Include="SQLite\sqlite3ext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
