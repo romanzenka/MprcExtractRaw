@@ -16,7 +16,7 @@
 #include "ChromatogramExtractor.h"
 
 // Version of MprcExtractRaw
-#define VERSION "0.4"
+#define VERSION "0.5"
 
 // Version of the ms_scans table
 #define SPECTRA_VERSION "0.1"
@@ -769,6 +769,7 @@ std::vector<std::string> getParamsFromFile(const char* inputParamsFile) {
 }
 
 void printUsage() {
+	std::cerr << "MprcExtractRaw " VERSION "\n\n";
 	std::cerr << "Usage: MprcExtractRaw <option> <parameters>\n";
 	std::cerr << std::endl;
 	std::cerr << "Options:" << std::endl;
