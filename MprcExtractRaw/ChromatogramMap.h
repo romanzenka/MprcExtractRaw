@@ -33,7 +33,7 @@ public:
 	void dumpEqualized(const std::string filename);
 
 	// Return the resulting map width (== number of spectra)
-	int getWidth() {
+	size_t getWidth() {
 		return data.size();
 	}
 

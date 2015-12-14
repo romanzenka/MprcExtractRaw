@@ -13,6 +13,7 @@
 #include "Readers/FinniganRawData.h"
 #include "PolymerDetection.h"
 #include "ChromatogramMap.h"
+#include "ChromatogramExtractor.h"
 
 // Version of MprcExtractRaw
 #define VERSION "0.4"
@@ -41,7 +42,16 @@ const std::string tuneMethodFile = "--tune";
 const std::string instrumentMethodFile = "--instrument";
 const std::string sampleInformationFile = "--sample";
 const std::string errorLogFile = "--errorlog";
-const std::string uvDataFile = "--uv"; // From UV controller (pressure info)
+const std::string uvDataFile = "--uv"; // From UV controller (pressure info)	
+const std::string rtcFile = "--rtc"; // File to extract retention time calibration data (e.g. Pierce)
+const std::string rtcPrecursorMzs = "--rtcPrecursorMzs"; // Colon-separated list of precursor m/z values
+const std::string rtcMassRounding = "--rtcMassRounding"; // number of decimals for rounding the m/z values, 2 by default
+const std::string rtcPpmMassTol = "--rtcPpmMassTol";     // mass tolerance for looking up the precursor m/z values in the spectral data
+
+
+// mass tolerance for looking up the precursor m/z
+// values in the spectral data
+double ppmMassTol;
 
 // MZ range params (rawFile is shared with MPRC params)
 const std::string minMz = "--min";
@@ -195,7 +205,7 @@ void extractInfoFile(Engine::Readers::FinniganRawData * fRawData, const char *in
 
 // While we are reading spectrum by spectrum data, we can produce two files - spectrum information and chromatogram.
 // Extraction of these two is thus bundled into one method for efficiency (it is very slow to list all spectra)
-void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::string spectraFileName, std::string chromatogramMapFileName) {
+void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::string spectraFileName, std::string chromatogramMapFileName, ChromatogramExtractor *chromatogramExtractor) {
 	using namespace std;
 	std::vector<double> mzs;
 	std::vector<double> intensities;
@@ -344,6 +354,9 @@ void extractPerSpectrumData(Engine::Readers::FinniganRawData *fRawData, std::str
 			if(map!=NULL) {
 				fRawData->GetRawData(&mzs, &intensities, scan_num);
 				map->addSpectrum(&mzs, &intensities);
+			}
+			if (chromatogramExtractor != NULL) {
+				chromatogramExtractor->addSpectrum(scan_num, &mzs, &intensities);
 			}
 		} else {
 			if(!spectraFileName.empty()) {
@@ -532,7 +545,8 @@ void extractUvData(Engine::Readers::FinniganRawData *fRawData, std::string fileN
 }
 
 int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, std::string spectraFileName, std::string chromatogramMapFileName,
-	std::string tuneMethodFileName, std::string instrumentMethodFileName, std::string sampleInfoFileName, std::string errorLogFileName, std::string uvDataFileName) {
+	std::string tuneMethodFileName, std::string instrumentMethodFileName, std::string sampleInfoFileName, std::string errorLogFileName, std::string uvDataFileName, 
+	ChromatogramExtractor *chromatogramExtractor) {
 		using namespace std;
 
 		clock_t startClock = clock();
@@ -573,7 +587,11 @@ int extractRawDataFile(std::string inputRawFileName, std::string infoFileName, s
 				extractUvData(fRawData, uvDataFileName);
 			}
 
-			extractPerSpectrumData(fRawData, spectraFileName, chromatogramMapFileName);
+			extractPerSpectrumData(fRawData, spectraFileName, chromatogramMapFileName, chromatogramExtractor);
+
+			if (chromatogramExtractor != NULL) {
+				chromatogramExtractor->save();
+			}
 
 		} catch(const char *exception) {
 			std::cerr << "ERROR: problem generating output data file " << " - " << exception << " " << strerror(errno) << "\n";
@@ -628,7 +646,7 @@ int extractRange(const char *inputRawFileName, const char *peaksFileName, double
 				pRawData->GetRawData(mzs, intensities, i, minMzValue, maxMzValue);
 				int scanNumber = i;
 				double retentionTime = pRawData->GetScanTime(scanNumber);
-				int numPeaks = mzs.size();
+				size_t numPeaks = mzs.size();
 				for(int j=0; j<numPeaks; j++) {
 					outputStream << scanNumber << '\t' << retentionTime << '\t' << mzs[j] << '\t' << intensities[j] << '\n';
 				}
@@ -778,6 +796,14 @@ void printUsage() {
 	std::cerr << "\tError log. If there was no error, this file should be empty." << std::endl;
 	std::cerr << "  " << uvDataFile << " <UV data file>" << std::endl;
 	std::cerr << "\tUV data log. If the UV controller data is missing, empty file is produced." << std::endl;
+	std::cerr << "  " << rtcFile << " <retention time calibration file>" << std::endl;
+	std::cerr << "\tRetention time calibration log. If this file is specified, all the --rtc* parameters must be specified." << std::endl;
+	std::cerr << "  " << rtcPrecursorMzs << " <colon separated list of m/zs>" << std::endl;
+	std::cerr << "\tColon-separated list of m/zs to extract chromatograms for." << std::endl;
+	std::cerr << "  " << rtcPpmMassTol << " <ppm tolerance>" << std::endl;
+	std::cerr << "\tMass tolerance for " << rtcPrecursorMzs << ". All values -/+ ppm away from " << rtcPrecursorMzs << " will be extracted for the chromatogram" << std::endl;
+	std::cerr << "  " << rtcMassRounding << " <# of decimal places to output>" << std::endl;
+	std::cerr << "\tHow many decimal places to round the mass to before extracting the chromatogram" << std::endl;
 
 	std::cerr << std::endl;
 	std::cerr << "Spectra file columns:" << std::endl;
@@ -869,6 +895,23 @@ int main(int argc, char* argv[])
 		std::string errorLogFileName = getOption(paramVector, errorLogFile);
 		std::string uvDataFileName = getOption(paramVector, uvDataFile);
 
+		ChromatogramExtractor *chromatogramExtractor = NULL;
+		std::string rtcFileName = getOption(paramVector, rtcFileName);
+		if (!rtcFileName.empty()) {
+			std::string precursorMzs = getOption(paramVector, rtcPrecursorMzs);
+
+			if (!precursorMzs.empty()) {
+				std::string massRoundingStr = getOption(paramVector, rtcMassRounding);
+				std::string ppmMassTolStr = getOption(paramVector, rtcPpmMassTol);
+
+				// TODO: validate these
+				int massRounding = atoi(massRoundingStr.c_str());
+				double ppmMasTol = atof(ppmMassTolStr.c_str());
+
+				chromatogramExtractor = new ChromatogramExtractor(rtcFileName, precursorMzs, massRounding, ppmMassTol);
+			}
+		}
+
 		return extractRawDataFile(
 			inputRawFileName, 
 			infoFileName, 
@@ -878,7 +921,8 @@ int main(int argc, char* argv[])
 			instrumentMethodFileName,
 			sampleInfoFileName,
 			errorLogFileName,
-			uvDataFileName);
+			uvDataFileName,
+			chromatogramExtractor);		
 	} else if (hasOption(paramVector, mzRange)) {
 		std::string inputRawFileName = getOption(paramVector, rawFile);
 		if (inputRawFileName.empty()) {

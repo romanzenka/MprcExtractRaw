@@ -177,6 +177,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChromatogramExtractor.cpp" />
     <ClCompile Include="ChromatogramMap.cpp" />
     <ClCompile Include="gif\egif_lib.c" />
     <ClCompile Include="gif\gifalloc.c" />
@@ -218,6 +219,7 @@
     <ClCompile Include="PeakProcessor\PeakProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChromatogramExtractor.h" />
     <ClInclude Include="ChromatogramMap.h" />
     <ClInclude Include="gif\gif_hash.h" />
     <ClInclude Include="gif\gif_lib.h" />
