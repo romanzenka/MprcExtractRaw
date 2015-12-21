@@ -897,7 +897,7 @@ int main(int argc, char* argv[])
 		std::string uvDataFileName = getOption(paramVector, uvDataFile);
 
 		ChromatogramExtractor *chromatogramExtractor = NULL;
-		std::string rtcFileName = getOption(paramVector, rtcFileName);
+		std::string rtcFileName = getOption(paramVector, rtcFile);
 		if (!rtcFileName.empty()) {
 			std::string precursorMzs = getOption(paramVector, rtcPrecursorMzs);
 
@@ -907,7 +907,7 @@ int main(int argc, char* argv[])
 
 				// TODO: validate these
 				int massRounding = atoi(massRoundingStr.c_str());
-				double ppmMasTol = atof(ppmMassTolStr.c_str());
+				ppmMassTol = atof(ppmMassTolStr.c_str());
 
 				chromatogramExtractor = new ChromatogramExtractor(rtcFileName, precursorMzs, massRounding, ppmMassTol);
 			}
