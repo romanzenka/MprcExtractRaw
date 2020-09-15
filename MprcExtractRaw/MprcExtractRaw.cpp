@@ -16,7 +16,7 @@
 #include "ChromatogramExtractor.h"
 
 // Version of MprcExtractRaw
-#define VERSION "0.5"
+#define VERSION "0.6"
 
 // Version of the ms_scans table
 #define SPECTRA_VERSION "0.1"
