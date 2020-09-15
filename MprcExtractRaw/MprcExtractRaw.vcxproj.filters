@@ -179,6 +179,9 @@
     <ClCompile Include="gif\gifalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ChromatogramExtractor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OutputBuffer.h">
@@ -298,5 +301,13 @@
     <ClInclude Include="gif\gif_lib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ChromatogramExtractor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bin\XRawfile2_x64.dll" />
+    <None Include="bin\Fileio_x64.dll" />
+    <None Include="bin\fregistry_x64.dll" />
   </ItemGroup>
 </Project>

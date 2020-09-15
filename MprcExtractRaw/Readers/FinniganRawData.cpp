@@ -21,6 +21,12 @@ namespace Engine
 {
 	namespace Readers
 	{
+		typedef struct _datapeak
+		{
+			double dTime;
+			double dIntensity;
+		} ChroDataPeak;
+
 		FinniganRawData::~FinniganRawData(void)
 		{			
 			if (marr_data_block != 0)
@@ -1209,21 +1215,115 @@ namespace Engine
 			res = m_xraw2_class->GetFirstSpectrumNumber(&firstSpectrum);
 			res = m_xraw2_class->GetLastSpectrumNumber(&lastSpectrum);
 
-			// List channels
-			long instNumChannelLabels;
-			res = m_xraw2_class->GetInstNumChannelLabels(&instNumChannelLabels);
-			if (res != 0) {
-				throw "Unable to get num channel labels";
-			}
-			for (long i = 0; i < instNumChannelLabels; i++) {
-				BSTR bstrLabel = NULL;
-				res = m_xraw2_class->GetInstChannelLabel(i, &bstrLabel);
+			// We extract loading pump and nc pump data
+			ChroDataPeak *loadingPumpData = NULL;
+			long loadingPumpNumPeaks = 0;
+
+			ChroDataPeak *ncPumpData = NULL;
+			long ncPumpNumPeaks = 0;
+
+			for (long uv_controller = 0; uv_controller < num_uv_controllers; uv_controller++) {
+				res = m_xraw2_class->SetCurrentController(UV_CONTROLLER, uv_controller + 1);
 				if (res != 0) {
-					throw "Unable to get channel label";
+					throw "Unable to set current controller to get chromatogram";
 				}
-				std::string label = _bstr_t(bstrLabel);
-				SysFreeString(bstrLabel);
+
+				// List channels
+				long instNumChannelLabels;
+				res = m_xraw2_class->GetInstNumChannelLabels(&instNumChannelLabels);
+				if (res != 0) {
+					throw "Unable to get num channel labels";
+				}
+
+				for (long i = 0; i < instNumChannelLabels; i++) {
+					BSTR bstrLabel = NULL;
+					res = m_xraw2_class->GetInstChannelLabel(i, &bstrLabel);
+					if (res != 0) {
+						throw "Unable to get channel label";
+					}
+
+					// Get name of the chromatogram for the channel
+					std::string label = _bstr_t(bstrLabel);
+					SysFreeString(bstrLabel);
+
+					// Get chromatogram for the entire channel. We do this because the status log entries are sometimes missing
+					// on the .raw files, this way we can recover the original data even if status log has issues.
+					VARIANT varChroData;
+					VariantInit(&varChroData);
+					VARIANT varPeakFlags;
+					VariantInit(&varPeakFlags);
+					long nArraySize = 0;
+					double dStartTime = 0.0;
+					double dEndTime = 0.0;
+					long nRet = m_xraw2_class->GetChroData(0,
+						0,
+						0,
+						(const char*)NULL,
+						(const char*)NULL,
+						(const char*)NULL,
+
+						0.0,
+						&dStartTime,
+						&dEndTime,
+						0,
+						0,
+						&varChroData,
+						&varPeakFlags,
+						&nArraySize);
+
+					if (nRet != 0)
+					{
+						throw "Error getting chro data.";
+					}
+
+					if (nArraySize)
+					{
+						// Get a pointer to the SafeArray
+						SAFEARRAY FAR* psa = varChroData.parray;
+						ChroDataPeak* pDataPeaks = NULL;
+						SafeArrayAccessData(psa, (void**)(&pDataPeaks));
+
+						if (label == "LoadingPump_Pressure") {
+							loadingPumpNumPeaks = nArraySize;
+							loadingPumpData = new ChroDataPeak[nArraySize];
+							memcpy(loadingPumpData, pDataPeaks, sizeof(ChroDataPeak) * nArraySize);
+						}
+						else if (label == "NC_Pump_Pressure") {
+							ncPumpNumPeaks = nArraySize;
+							ncPumpData = new ChroDataPeak[nArraySize];
+							memcpy(ncPumpData, pDataPeaks, sizeof(ChroDataPeak) * nArraySize);
+						}
+
+						// Release the data handle
+						SafeArrayUnaccessData(psa);
+					}
+					if (varChroData.vt != VT_EMPTY)
+					{
+						SAFEARRAY FAR* psa = varChroData.parray;
+						varChroData.parray = NULL;
+						// Delete the SafeArray
+						SafeArrayDestroy(psa);
+					}
+					if (varPeakFlags.vt != VT_EMPTY)
+					{
+						SAFEARRAY FAR* psa = varPeakFlags.parray;
+						varPeakFlags.parray = NULL;
+						// Delete the SafeArray
+						SafeArrayDestroy(psa);
+					}
+				}
 			}
+
+
+			// Return to first UV controller, that is where status log data tends to be
+			res = m_xraw2_class->SetCurrentController(UV_CONTROLLER, 1);
+			if (res != 0) {
+				throw "Unable to set current controller to get status log";
+			}
+
+			// Index to the pump data array for the field to check against spectrum RT
+			long loadingPumpIndex = 0;
+			long ncPumpIndex = 0;
 
 			for (long scan_num = firstSpectrum; scan_num <= lastSpectrum; scan_num++) {
 				double statusLogRT;
@@ -1241,8 +1341,10 @@ namespace Engine
 				if (nRet != 0) {
 					throw "Could not get status log";
 				}
-
 				KeyValuePair *data = getKeyValuePairs(&varLabels, &varValues, nArraySize);
+
+				VariantClear(&varLabels);
+				VariantClear(&varValues);
 
 				if (scan_num == firstSpectrum) {
 					uvData->append("id\trt");
@@ -1260,6 +1362,26 @@ namespace Engine
 				uvData->append(buf);
 				for (long i = 0; i < nArraySize; i++)
 				{
+					// Bypass the log information if we have data in the chromatogram
+					if (data[i].key == "PumpModule.LoadingPump.Pressure" && loadingPumpNumPeaks > 0) {
+						while (loadingPumpIndex < loadingPumpNumPeaks && loadingPumpData[loadingPumpIndex].dTime <= statusLogRT) {
+							loadingPumpIndex++;
+						}
+						double value = loadingPumpData[loadingPumpIndex - 1].dIntensity;
+						uvData->append("\t");
+						uvData->append(std::to_string(value));
+						continue;
+					}
+					if (data[i].key == "PumpModule.NC_Pump.Pressure" && ncPumpNumPeaks > 0) {
+						while (ncPumpIndex < ncPumpNumPeaks && ncPumpData[ncPumpIndex].dTime <= statusLogRT) {
+							ncPumpIndex++;
+						}
+						double value = ncPumpData[ncPumpIndex - 1].dIntensity;
+						uvData->append("\t");
+						uvData->append(std::to_string(value));
+						continue;
+					}
+
 					std::string sData = data[i].value;
 					uvData->append("\t");
 					uvData->append(sData.c_str());

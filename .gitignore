@@ -6,3 +6,10 @@ ipch
 *.sdf
 *.suo
 *~
+/.vs/MprcExtractRaw/v15/Browse.VC.db
+/.vs/MprcExtractRaw/v15/Browse.VC.opendb
+/MprcExtractRaw/bin/XRawfile2_x64.dll
+/MprcExtractRaw/bin/MSFileReader_Reference.pdf
+/MprcExtractRaw/bin/fregistry_x64.dll
+/MprcExtractRaw/bin/Fileio_x64.dll
+/MprcExtractRaw.VC.db

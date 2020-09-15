@@ -797,7 +797,6 @@ Exits and prints error message on invalid MATRIX structure.
 double matrix_det(MATRIX *A)
 {
     //MATRIX *matrix_allocate();
-    void matrix_free();
 
     MATRIX *Adet;
     double **a;
